@@ -16,6 +16,9 @@ The project consists of several components:
 - **Computer Vision:**  
   (Coming soon) Scripts that use computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc.  
 
+- **IP Camera:**
+  Some simple scripts written to work with consumer IP cameras to trigger Hubitat API calls when motion is detected.
+
 - **Water Level Monitoring:**  
   (Planned) Future scripts to monitor the water level in the pond.
 
