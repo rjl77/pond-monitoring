@@ -14,7 +14,7 @@ The project consists of several components:
     Reads air and water temperatures from 1-Wire sensors and prints the values (formatted for charting via Cacti or a similar platform).
 
 - **Computer Vision:**  
-  (Coming soon) Scripts that use computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc.  
+  (Coming soon) Scripts that use machine learning and computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc.  
 
 - **IP Camera:**  
   Some simple scripts written to work with consumer IP cameras to trigger Hubitat API calls when motion is detected.
