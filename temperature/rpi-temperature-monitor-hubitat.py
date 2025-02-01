@@ -18,6 +18,8 @@ Before deploying, populate these placeholders with the appropriate values:
 Notes:
  - Python 3.9.2
  - Can be configured as a service
+ - The temperature values are being sent to a Hubitat Virtual Temperature Sensor
+ - The "last reported" time and date are sent to a Hubitat Virtual Omni Sensor
     
 """
 
