@@ -2,10 +2,11 @@
 """
 Simple RPi Temperature Monitor Script for Hubitat
 
-This script polls a temperature sensor via the 1-Wire interface,
-calculates the current temperature along with the highest and lowest
-temperatures over a rolling 24-hour window, and sends these values to a
-Hubitat home automation hub via API calls.
+This script polls a temperature sensor via the 1-Wire interface every
+15 minutes (900 seconds), calculates the current temperature along with 
+the highest and lowest temperatures over a rolling 24-hour window, and 
+sends these values (and the timestamp of the last check) to a Hubitat 
+home automation hub via API calls.
 
 Before deploying, populate these placeholders with the appropriate values:
   - SENSOR_ID: The hardware address for your temperature sensor.
