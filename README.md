@@ -19,7 +19,7 @@ The project consists of several components:
 - **IP Camera:**  
   Some simple scripts written to work with consumer IP cameras to trigger Hubitat API calls when motion is detected.
 
-  The 'ip-camera/' subfolder contains two scripts:
+  The `ip-camera/` subfolder contains two scripts:
   - **Dummy TCP Server:**  
     A simple Python script, intended to be run as a service, that creates a basic TCP listener. Useful for consumer IP cameras who can connect to other devices (such as SMTP or FTP) when motion is detected. This works in conjunction with:
   - **Hubitat Motion Trigger**
