@@ -23,7 +23,7 @@ The project consists of several components:
   - **Dummy TCP Server:**  
     A simple Python script, intended to be run as a service, that creates a basic TCP listener. Useful for consumer IP cameras who can connect to other devices (such as SMTP or FTP) when motion is detected. This works in conjunction with:
   - **Hubitat Motion Trigger**
-    A bash script, also intended to be run as a service, that monitors SYN traffic to a specific port (via tcpdump), and then sends an API call to a Hubitat virtual device (such as a Virtual Switch). Can manage multiple source devices and Hubitat virtual devices from a single service by MAC address from a single instance.
+    A bash script, also intended to be run as a service, that monitors when SYN packets are sent to a specific port (via tcpdump), and then sends an API call to a Hubitat virtual device (such as a Virtual Switch). Can manage multiple source devices and Hubitat virtual devices from a single service by MAC address from a single instance.
 
 - **Water Level Monitoring:**  
   (Planned) Future scripts to monitor the water level in the pond.
