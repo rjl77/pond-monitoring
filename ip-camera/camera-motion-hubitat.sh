@@ -17,7 +17,7 @@
 #   - ACCESS_TOKEN: Your Hubitat API access token.
 #   - DEVICE_x: A name for your device.
 #		- Also specify the hardware/MAC address (for each camera) and Hubitat device ID (for
-#             example, a Virtual Switch to toggle a light/s).
+#                 example, a Virtual Motion Sensor).
 #
 # Device Configuration:
 #   Map generic device names to identifiers (hostnames or MAC addresses) and Hubitat device IDs.
