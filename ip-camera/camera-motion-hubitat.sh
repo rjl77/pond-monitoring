@@ -16,7 +16,8 @@
 #   - HUBITAT_API_BASE: The base URL for your Hubitat hub's API.
 #   - ACCESS_TOKEN: Your Hubitat API access token.
 #   - DEVICE_x: A name for your device.
-#		- Also specify the hardware/MAC address and Hubitat device ID.
+#		- Also specify the hardware/MAC address (for each camera) and Hubitat device ID (for
+#         example, a Virtual Switch to toggle a light/s).
 #
 # Device Configuration:
 #   Map generic device names to identifiers (hostnames or MAC addresses) and Hubitat device IDs.
@@ -32,14 +33,14 @@ ACCESS_TOKEN="YOUR_ACCESS_TOKEN"
 
 # Declare associative arrays mapping generic device names to their MAC addresses and Hubitat device IDs.
 declare -A DEVICE_MACS=(
-    # Format: ["GENERIC_DEVICE_NAME"]="MAC_ADDRESS"
+    # Format: ["GENERIC_DEVICE_NAME"]="MAC_ADDRESS", ex.: ["Pond-PTZ"]="aa:bb:cc:00:11:22".
     ["DEVICE_A"]="XX:XX:XX:XX:XX:XX"
     ["DEVICE_B"]="YY:YY:YY:YY:YY:YY"
     ["DEVICE_C"]="ZZ:ZZ:ZZ:ZZ:ZZ:ZZ"
 )
 
 declare -A DEVICE_IDS=(
-    # Format: ["GENERIC_DEVICE_NAME"]="HUBITAT_DEVICE_ID"
+    # Format: ["GENERIC_DEVICE_NAME"]="HUBITAT_DEVICE_ID", ex.: ["Pond-PTZ"]="101"
     ["DEVICE_A"]="101"
     ["DEVICE_B"]="102"
     ["DEVICE_C"]="103"
