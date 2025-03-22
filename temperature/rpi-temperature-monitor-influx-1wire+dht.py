@@ -6,6 +6,9 @@ Purpose:
     This script reads temperature data from a DS18B20 (1-Wire) sensor and both temperature and humidity data from a DHT sensor (e.g., DHT22).
     It writes the data as time-series points to an InfluxDB instance. This data can then be visualized using tools such as Grafana.
 
+    If the InfluxDB server is unavailable, write JSON-formatted readings to a journal file and attempt to reconcile logged readings when
+    connectivity has been restored.
+
 Usage:
     - Configure the sensor settings (e.g., DS18B20 sensor path, DHT sensor type and GPIO pin).
     - Update the InfluxDB connection settings (host, port, username, password, and database names).
@@ -15,18 +18,17 @@ Usage:
 
 Dependencies:
     - Python 3
-    - adafruit_dht, board (for DHT sensor)
     - InfluxDB Python client
     - A DS18B20 sensor (1-Wire) enabled on your Raspberry Pi
-
-Future:
-    - Add journal + reconcile feature for recording readings if the system is still running, but network is down. It's happened...
+    - (Optional) a DHT temperature/humidity sensor
+        - adafruit_dht, board (for DHT sensor)
 """
 
 import os
 import time
 import board
 import adafruit_dht
+import json
 from datetime import datetime, timezone
 from influxdb import InfluxDBClient
 
@@ -61,6 +63,9 @@ else:
 
 # Polling interval in seconds (how often to read sensors)
 POLL_INTERVAL = 60
+
+# Journal configuration: local file to cache sensor data when InfluxDB is unreachable
+JOURNAL_FILE = "sensor_journal.log"
 
 # ---------------------------
 # Initialize Sensors
@@ -99,6 +104,54 @@ def get_influx_client():
 
 # Initialize the InfluxDB client
 client = get_influx_client()
+
+# ---------------------------
+# Local Journal Functions
+# ---------------------------
+def append_to_journal(data):
+    """Appends a JSON-encoded sensor reading to the local journal."""
+    try:
+        with open(JOURNAL_FILE, "a") as f:   # Open the journal file in 'append' mode.
+            f.write(json.dumps(data) + "\n")
+        print("📓 Sensor reading appended to local journal.")
+    except Exception as e:
+        print(f"❌ Failed to write to journal: {e}")
+
+def flush_journal():
+    """Attempts to write all cached sensor readings from the journal to InfluxDB.
+       Clears the journal file upon successful write.
+    """
+    if not os.path.exists(JOURNAL_FILE):
+        print("🔍 Journal file not found.")
+        return  # No journal to flush
+    try:
+        with open(JOURNAL_FILE, "r") as f:
+            lines = f.readlines()
+        if not lines: # Journal is present but empty
+            print("🔍 Journal file is empty.")
+            return
+
+        # Parse each line as a JSON object
+        cached_data = [json.loads(line.strip()) for line in lines if line.strip()]
+
+        # Flatten the list: combine logged entries prior to import
+        flat_points = []
+        for entry in cached_data:
+            if isinstance(entry, list):
+                flat_points.extend(entry)
+            else:
+                flat_points.append(entry)
+
+        if flat_points:
+            result = client.write_points(flat_points)
+            print(f"DEBUG: write_points returned: {result}")
+            print("✅ Flushed cached sensor readings from journal to InfluxDB.")
+            # Clear the journal after a successful flush
+            open(JOURNAL_FILE, "w").close()
+        else:
+            print("🔍 No valid cached data parsed from journal.")
+    except Exception as e:
+        print(f"❌ Error flushing journal: {e}")
 
 # ---------------------------
 # Sensor Reading Functions
@@ -154,6 +207,12 @@ def main():
         while True:
             current_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
+            # Attempt to reconcile any journaled readings first
+            try:
+                flush_journal()
+            except Exception as e:
+                print(f"❌ Error flushing journal: {e}")
+
             # Read sensor values
             water_temp = read_ds18b20()
             air_temp, humidity = read_dht()
@@ -193,16 +252,20 @@ def main():
 
             # Write data to InfluxDB
             try:
-                if json_body:
-                    client.write_points(json_body)
-                    print(f"✅ {current_time} - Data written: {json_body}")
-                else:
-                    print(f"⚠️ {current_time} - No valid sensor data to write.")
+                client.write_points(json_body)
+                print(f"✅ {current_time} - Data written: {json_body}")
             except Exception as e:
                 print(f"❌ Error writing to InfluxDB: {e}")
-                # Attempt to reconnect to InfluxDB
-                client = get_influx_client()
-                print("🔄 Reconnected to InfluxDB.")
+                # First, attempt to reconnect and re-try the write.
+                try:
+                    client = get_influx_client()
+                    print("🔄 Reconnected to InfluxDB. Retrying write...")
+                    client.write_points(json_body)
+                    print(f"✅ {current_time} - Data written on retry: {json_body}")
+                except Exception as conn_error:
+                    print(f"❌ Retry failed: {conn_error}")
+                    # If retry still fails, append the current reading to the journal for later back-fill.
+                    append_to_journal(json_body)
 
             # Wait for the next polling interval
             time.sleep(POLL_INTERVAL)
