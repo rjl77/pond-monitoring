@@ -1,6 +1,6 @@
 # Pond Monitoring Project
 
-Scripts (mostly Python, so far) to monitor various aspects of a backyard koi pond - environmental conditions, including temperature, water level, and potential threats (e.g., predators). Nothing terribly fancy or intelligent, just some messing around with a mixture of Raspberry Pi, sensor devices, Hubitat, IP cameras and computer vision.
+Scripts (mostly Python, so far) to monitor various aspects of a backyard koi pond - environmental conditions, including temperature, water level, and potential threats (e.g., predators). Nothing terribly fancy or intelligent, just some messing around with a mixture of Raspberry Pi, sensor devices, a Hubitat home automation hub, IP cameras and computer vision.
 
 ## Project Overview
 
