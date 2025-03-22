@@ -27,7 +27,7 @@ import os
 import time
 import board
 import adafruit_dht
-from datetime import datetime
+from datetime import datetime, timezone
 from influxdb import InfluxDBClient
 
 # ---------------------------
@@ -69,20 +69,36 @@ if USE_DHT:
     dht_sensor = DHT_TYPE(DHT_PIN)
 
 # ---------------------------
-# Setup InfluxDB Connection
+# InfluxDB Connection Setup Function
 # ---------------------------
-client = InfluxDBClient(
-    host=INFLUX_HOST,
-    port=INFLUX_PORT,
-    username=INFLUX_USER,
-    password=INFLUX_PASSWORD,
-)
+def get_influx_client():
+    client = InfluxDBClient(
+        host=INFLUX_HOST,
+        port=INFLUX_PORT,
+        username=INFLUX_USER,
+        password=INFLUX_PASSWORD,
+    )
+    # Create the database if it doesn't exist
+    databases = client.get_list_database()
+    if not any(db["name"] == INFLUX_DB for db in databases):
+        client.create_database(INFLUX_DB)
+    client.switch_database(INFLUX_DB)
+    
+    # Test the connection with a ping
+    try:
+        ping_response = client.ping()
+        if ping_response:
+            print("✅ InfluxDB ping successful.")
+        else:
+            raise Exception("Empty response from InfluxDB ping.")
+    except Exception as e:
+        print(f"❌ InfluxDB connection test failed: {e}")
+        raise e
 
-# Create the database if it doesn't exist
-databases = client.get_list_database()
-if not any(db["name"] == INFLUX_DB for db in databases):
-    client.create_database(INFLUX_DB)
-client.switch_database(INFLUX_DB)
+    return client
+
+# Initialize the InfluxDB client
+client = get_influx_client()
 
 # ---------------------------
 # Sensor Reading Functions
@@ -131,11 +147,12 @@ def read_dht():
 # Main Data Collection Loop
 # ---------------------------
 def main():
+    global client  # To allow reinitializing the global client variable
     print(f"📡 Starting sensor logging... Writing to database: {INFLUX_DB}")
     
     try:
         while True:
-            current_time = datetime.utcnow().isoformat() + "Z"
+            current_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
             # Read sensor values
             water_temp = read_ds18b20()
@@ -183,6 +200,9 @@ def main():
                     print(f"⚠️ {current_time} - No valid sensor data to write.")
             except Exception as e:
                 print(f"❌ Error writing to InfluxDB: {e}")
+                # Attempt to reconnect to InfluxDB
+                client = get_influx_client()
+                print("🔄 Reconnected to InfluxDB.")
 
             # Wait for the next polling interval
             time.sleep(POLL_INTERVAL)
