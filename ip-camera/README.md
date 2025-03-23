@@ -1,6 +1,6 @@
-# Pond Monitoring & Hubitat API Trigger
+# Hubitat Virtual Motion Sensor Trigger
 
-These two scripts that work to monitor camera activity and trigger a Hubitat virtual motion sensor via API calls. This should work with any off-the-shelf IP camera that can either send an e-mail or ftp a file. The first script is a dummy TCP server that can be targeted in place of an SMTP or FTP server. The second script monitors any incoming connections to the dummy server (via `tcpdump`) from specified devices and triggers the specified Hubitat device API endpoint (via `curl`).
+These two scripts that work to monitor camera activity and trigger a Hubitat Virtual Motion Sensor via API calls. This should work with any off-the-shelf IP camera that can either send an e-mail or ftp a file. The first script is a dummy TCP server that can be targeted in place of an SMTP or FTP server. The second script monitors any incoming connections to the dummy server (via `tcpdump`) from specified devices and triggers the specified Hubitat device API endpoint (via `curl`).
 
 ## Dummy TCP Server (Python Script)
 - **Purpose:**  
@@ -12,7 +12,6 @@ These two scripts that work to monitor camera activity and trigger a Hubitat vir
 - **Configuration:**  
   - **HOST:** Defaults to `0.0.0.0` (all interfaces).  
   - **PORT:** Defaults to `2525`.
-
 
 ## Hubitat API Trigger via TCPDump (Bash Script)
 - **Purpose:**  
