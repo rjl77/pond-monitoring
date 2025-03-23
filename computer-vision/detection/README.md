@@ -12,3 +12,7 @@ This project includes scripts, models, and related tools aimed at accurately ide
 
 - **capture-background-frames.py:**  
   A simple script to capture a specified number of static/background images from an RTSP stream. These images provide a baseline for detection and help in highlighting the appearance of new objects in the frame.
+
+- **sample.jpg:**
+
+  ![Heron Detection Example](sample.jpg)
