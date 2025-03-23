@@ -1,4 +1,4 @@
-# Computer Vision (Predator Detection)
+# Predator Detection
 
 This project includes scripts, models, and related tools aimed at accurately identifying herons and, later, raccoons from a video feed. My training and test scripts will be added and refined over time.
 
