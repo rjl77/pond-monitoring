@@ -17,7 +17,7 @@ These two scripts that work to monitor camera activity and trigger a Hubitat Vir
 - **Purpose:**  
   Monitors network traffic on a specified port (default: 2525) for incoming SYN packets. When a packet from a known device (by MAC address) is detected, it triggers the corresponding Hubitat API endpoint via `curl`.
     
-  This method is used to activate a Hubitat device, in my case a Virtual Motion Sensor.
+  This method is used to activate a Hubitat device, in my case one or more Virtual Motion Sensors.
 
   Run this script as a service.
   
