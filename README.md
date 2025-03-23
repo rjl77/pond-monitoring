@@ -15,8 +15,8 @@ The project consists of several components:
   - **InfluxDB Temperature Collection Script:**  
     Reads air and water temperatures from 1-Wire sensors and/or DHT sensors and sends them to an InfluxDB server as time series data.    
 
-- **Computer Vision:**  
-  (Coming soon) Scripts that use machine learning and computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc.  
+- **Predator Detection via Computer Vision:**  
+  (Coming soon) Scripts that use machine learning and computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc. 
 
 - **IP Camera:**  
   Some simple scripts written to work with consumer IP cameras to trigger Hubitat API calls when motion is detected.
