@@ -13,7 +13,7 @@ The project consists of several components:
   - **Cacti Temperature Collection Script:**  
     Reads air and water temperatures from 1-Wire sensors and prints the values (formatted for charting via Cacti or a similar platform).
   - **InfluxDB Temperature Collection Script:**  
-    Reads air and water temperatures from 1-Wire sensors and/or DHT sensors and sends them to an InfluxDB server as time series data.    
+    Reads air and water temperatures from 1-Wire sensors and/or DHT sensors and sends them to an InfluxDB server as time series data. Update: DHT sensors can be flaky, so I added an option to retrieve air temperature via API call.    
 
 - **Predator Detection via Computer Vision:**  
   (Coming soon) Scripts that use machine learning and computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc. 
