@@ -4,6 +4,7 @@ Raspberry Pi Sensor > Influx Logger
 -----------------------------------
 Purpose:
     This script reads temperature data from a DS18B20 (1-Wire) sensor and both temperature and humidity data from a DHT sensor (e.g., DHT22).
+    Alternately, air temperature can be polled via API call.
     It writes the data as time-series points to an InfluxDB instance. This data can then be visualized using tools such as Grafana.
 
     If the InfluxDB server is unavailable, write JSON-formatted readings to a journal file and attempt to reconcile logged readings when
@@ -11,6 +12,7 @@ Purpose:
 
 Usage:
     - Configure the sensor settings (e.g., DS18B20 sensor path, DHT sensor type and GPIO pin).
+    - Toggle air temperature source - API or DHT sensor.
     - Update the InfluxDB connection settings (host, port, username, password, and database names).
     - Optionally, enable TEST_MODE to write data to a test database.
     - Run the script on a Raspberry Pi with the required sensors connected.
@@ -22,6 +24,7 @@ Dependencies:
     - A DS18B20 sensor (1-Wire) enabled on your Raspberry Pi
     - (Optional) a DHT temperature/humidity sensor
         - adafruit_dht, board (for DHT sensor)
+    - (Optional) an API to pull temperature data from a home automation device or website
 """
 
 import os
@@ -39,17 +42,24 @@ from influxdb import InfluxDBClient
 # DS18B20 (1-Wire) Sensor Path - update with your sensor ID
 DS18B20_PATH = "/sys/bus/w1/devices/28-xxxxxxxxxxx/w1_slave"
 
-# DHT Sensor Configuration 
+# DHT Sensor Configuration
 USE_DHT = True
 DHT_TYPE = adafruit_dht.DHT22   # Change to DHT11 if needed
 DHT_PIN = board.D17             # GPIO pin where the DHT sensor data pin is connected
+
+# API Configuration
+USE_API = True
+API_URL = "http://xx.xx.xx.xx/xyz"
+
+if USE_API:
+     import requests
 
 # TEST MODE: If enabled, data will be written to a test database
 TEST_MODE = False  # Set to True to use a test database
 
 # InfluxDB Connection Configuration
 INFLUX_HOST = "xx.xx.xx.xx"      # Replace with your InfluxDB IP or hostname
-INFLUX_PORT = 8086              # Replace with your InfluxDB port
+INFLUX_PORT = XXXX              # Replace with your InfluxDB port
 INFLUX_USER = "writer"          # InfluxDB username
 INFLUX_PASSWORD = "password"    # InfluxDB password
 
@@ -196,6 +206,22 @@ def read_dht():
     print("❌ DHT sensor failed after multiple attempts")
     return None, None
 
+def read_api_temp():
+    """Fetches air temperature from JSON API via requests."""
+    try:
+        resp = requests.get(API_URL, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        temp = data["value"] # Name of data item
+        return float(temp)
+    except Exception as e:
+        print(f"❌ API read error: {e}")
+        return None
+
+
+# ---------------------------
+# Main Data Collection Loop
+# ---------------------------
 # ---------------------------
 # Main Data Collection Loop
 # ---------------------------
@@ -215,7 +241,13 @@ def main():
 
             # Read sensor values
             water_temp = read_ds18b20()
-            air_temp, humidity = read_dht()
+            
+            # Read air temp & humidity via API or DHT sensor
+            if USE_API:
+                air_temp = read_api_temp()
+                humidity = None
+            else:
+                air_temp, humidity = read_dht()
 
             # If no valid readings, skip this cycle
             if water_temp is None and air_temp is None:
