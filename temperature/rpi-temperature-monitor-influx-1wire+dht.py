@@ -28,6 +28,19 @@ Dependencies:
 
 To-Do:
     - Move all variables to an external configuration file
+
+Note:
+
+    If running as a service, configure the top of the unit file as such:
+
+    [Unit]
+    Description=Environmental Sensor Reading Import to InfluxDB
+    After=network-online.target
+    Wants=network-online.target
+
+    This was added as an additional help, as there have been issues post-reboot where the service starts,
+    runs, but does not report.
+    
 """
 
 import os
