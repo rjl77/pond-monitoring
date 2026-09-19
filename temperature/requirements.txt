@@ -1,0 +1,7 @@
+# Required runtime dependencies
+influxdb>=5.3,<6
+requests>=2.28,<3
+
+# Optional: required only when AIR_SOURCE=dht
+# adafruit-circuitpython-dht>=4,<5
+# Adafruit-Blinka>=8,<9

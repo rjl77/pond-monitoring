@@ -1,0 +1,23 @@
+# Machine-local configuration / secrets
+config/pond.env
+
+# Runtime state
+runtime/*
+!runtime/.gitkeep
+
+# Python virtual environment
+.venv/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+
+# Local exports / backups
+*.csv
+
+# Editor / OS junk
+.vscode/
+.DS_Store
