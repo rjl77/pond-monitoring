@@ -386,3 +386,68 @@ For a replacement or freshly imaged Pi:
 A full SD-card image can be maintained as an additional disaster-recovery
 option, but the application is intended to be reproducibly deployable without
 one.
+
+## Git Deployment and Updates
+
+The production installation is maintained as a sparse checkout of the
+`pond-monitoring` Git repository.
+
+Repository location:
+
+```text
+/opt/pond-monitor-repo
+```
+
+Only the `temperature/` project is checked out. The stable application path is
+a symbolic link:
+
+```text
+/opt/pond-monitor -> /opt/pond-monitor-repo/temperature
+```
+
+Machine-specific configuration remains in:
+
+```text
+/opt/pond-monitor/config/pond.env
+```
+
+`pond.env` is excluded from Git and must never be committed.
+
+### Update from Git
+
+Fetch and fast-forward the production checkout:
+
+```bash
+cd /opt/pond-monitor-repo
+git pull --ff-only
+```
+
+Then apply the deployment:
+
+```bash
+cd /opt/pond-monitor
+sudo ./install.sh
+```
+
+Verify the services:
+
+```bash
+systemctl is-active pond-collector.service pond-hubitat.service
+```
+
+Both should report `active`.
+
+Check the repository afterward:
+
+```bash
+cd /opt/pond-monitor-repo
+git status
+```
+
+The working tree should be clean. Runtime state and `config/pond.env` are
+ignored and therefore do not normally appear in Git status.
+
+Ideally, do not develop directly on the Raspberry Pi. Make source and 
+documentation changes in the Git repository on a development machine, 
+push them to GitHub, then use the update procedure above on the Pi.
+
