@@ -82,7 +82,7 @@ The installer then exits so the configuration can be edited.
 Edit:
 
 ```bash
-nano /opt/pond-monitor/config/pond.env
+sudo nano /opt/pond-monitor/config/pond.env
 ```
 
 At minimum, configure the runtime account, DS18B20 ID, InfluxDB connection,
