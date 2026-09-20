@@ -1,0 +1,14 @@
+[Unit]
+Description=Pond Monitor Network Diagnostic Watchdog
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/pond-monitor/tools/network-watchdog
+Restart=on-failure
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

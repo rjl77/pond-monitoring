@@ -264,6 +264,7 @@ log "Prerequisite checks complete."
 
 COLLECTOR_UNIT="$APP_DIR/systemd/pond-collector.service"
 HUBITAT_UNIT="$APP_DIR/systemd/pond-hubitat.service"
+WATCHDOG_UNIT="$APP_DIR/systemd/pond-network-watchdog.service"
 
 for unit in "$COLLECTOR_UNIT" "$HUBITAT_UNIT"; do
     if [[ ! -f "$unit" ]]; then
@@ -279,6 +280,10 @@ for unit in "$COLLECTOR_UNIT" "$HUBITAT_UNIT"; do
     fi
 done
 
+if [[ ! -f "$WATCHDOG_UNIT" ]]; then
+    die "systemd unit template not found: $WATCHDOG_UNIT"
+fi
+
 log "Installing systemd service files..."
 
 sed \
@@ -293,9 +298,13 @@ sed \
     "$HUBITAT_UNIT" \
     > /etc/systemd/system/pond-hubitat.service
 
+cp "$WATCHDOG_UNIT" \
+    /etc/systemd/system/pond-network-watchdog.service
+
 chmod 644 \
     /etc/systemd/system/pond-collector.service \
-    /etc/systemd/system/pond-hubitat.service
+    /etc/systemd/system/pond-hubitat.service \
+    /etc/systemd/system/pond-network-watchdog.service
 
 systemctl daemon-reload
 
@@ -339,6 +348,11 @@ else
     systemctl stop pond-hubitat.service 2>/dev/null || true
 fi
 
+log "Enabling network diagnostic watchdog..."
+
+systemctl enable pond-network-watchdog.service
+systemctl restart pond-network-watchdog.service
+
 log "Pond Monitor services configured."
 
 # ----------------------------------------------------------------------
@@ -366,6 +380,12 @@ if [[ "$HUBITAT_PUBLISH_ENABLED" == "true" ]]; then
     log "Hubitat publisher service is active."
 fi
 
+if ! systemctl is-active --quiet pond-network-watchdog.service; then
+    systemctl status pond-network-watchdog.service --no-pager || true
+    die "Network diagnostic watchdog failed to start."
+fi
+
+log "Network diagnostic watchdog service is active."
 
 # ----------------------------------------------------------------------
 # Health check

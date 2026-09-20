@@ -23,9 +23,6 @@ if [[ -z "$GATEWAY" ]]; then
     exit 1
 fi
 
-INFLUX_HOST="${INFLUX_HOST:?INFLUX_HOST is not configured}"
-HUBITAT_HOST="${HUBITAT_HOST:?HUBITAT_HOST is not configured}"
-
 FAILURE_THRESHOLD=2
 CHECK_INTERVAL=60
 
@@ -37,9 +34,17 @@ log() {
 }
 
 network_reachable() {
+    # The default gateway is always our primary LAN test.
     ping -c 1 -W 2 "$GATEWAY" >/dev/null 2>&1 && return 0
-    ping -c 1 -W 2 "$INFLUX_HOST" >/dev/null 2>&1 && return 0
-    ping -c 1 -W 2 "$HUBITAT_HOST" >/dev/null 2>&1 && return 0
+
+    # Test configured application hosts as additional evidence.
+    if [[ -n "${INFLUX_HOST:-}" ]]; then
+        ping -c 1 -W 2 "$INFLUX_HOST" >/dev/null 2>&1 && return 0
+    fi
+
+    if [[ -n "${HUBITAT_HOST:-}" ]]; then
+        ping -c 1 -W 2 "$HUBITAT_HOST" >/dev/null 2>&1 && return 0
+    fi
 
     return 1
 }
@@ -63,11 +68,15 @@ snapshot() {
     log "--- Gateway ping ---"
     ping -c 2 -W 2 "$GATEWAY" 2>&1 | logger -t pond-network-watchdog
 
-    log "--- InfluxDB host ping ---"
-    ping -c 2 -W 2 "$INFLUX_HOST" 2>&1 | logger -t pond-network-watchdog
+    if [[ -n "${INFLUX_HOST:-}" ]]; then
+        log "--- InfluxDB host ping ---"
+        ping -c 2 -W 2 "$INFLUX_HOST" 2>&1 | logger -t pond-network-watchdog
+    fi
 
-    log "--- Hubitat host ping ---"
-    ping -c 2 -W 2 "$HUBITAT_HOST" 2>&1 | logger -t pond-network-watchdog
+    if [[ -n "${HUBITAT_HOST:-}" ]]; then
+        log "--- Hubitat host ping ---"
+        ping -c 2 -W 2 "$HUBITAT_HOST" 2>&1 | logger -t pond-network-watchdog
+    fi
 
     log "===== End network diagnostic snapshot ====="
 }
