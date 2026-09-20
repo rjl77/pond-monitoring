@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -u
+
+INTERFACE="wlan0"
+ENV_FILE="/opt/pond-monitor/config/pond.env"
+
+if [[ ! -r "$ENV_FILE" ]]; then
+    echo "Cannot read configuration: $ENV_FILE" >&2
+    exit 1
+fi
+
+# Load Pond Monitor configuration.
+set -a
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+set +a
+
+GATEWAY=$(ip route show default | awk '/default/ {print $3; exit}')
+
+if [[ -z "$GATEWAY" ]]; then
+    echo "Unable to determine default gateway." >&2
+    exit 1
+fi
+
+INFLUX_HOST="${INFLUX_HOST:?INFLUX_HOST is not configured}"
+HUBITAT_HOST="${HUBITAT_HOST:?HUBITAT_HOST is not configured}"
+
+FAILURE_THRESHOLD=2
+CHECK_INTERVAL=60
+
+consecutive_failures=0
+outage_start=""
+
+log() {
+    logger -t pond-network-watchdog "$*"
+}
+
+snapshot() {
+    log "===== Network diagnostic snapshot ====="
+
+    log "--- NetworkManager ---"
+    nmcli -f GENERAL.STATE,GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY \
+        device show "$INTERFACE" 2>&1 | logger -t pond-network-watchdog
+
+    log "--- Wi-Fi link ---"
+    iw dev "$INTERFACE" link 2>&1 | logger -t pond-network-watchdog
+
+    log "--- Routes ---"
+    ip route 2>&1 | logger -t pond-network-watchdog
+
+    log "--- Neighbours ---"
+    ip neigh 2>&1 | logger -t pond-network-watchdog
+
+    log "--- Gateway ping ---"
+    ping -c 2 -W 2 "$GATEWAY" 2>&1 | logger -t pond-network-watchdog
+
+    log "--- InfluxDB host ping ---"
+    ping -c 2 -W 2 "$INFLUX_HOST" 2>&1 | logger -t pond-network-watchdog
+
+    log "--- Hubitat host ping ---"
+    ping -c 2 -W 2 "$HUBITAT_HOST" 2>&1 | logger -t pond-network-watchdog
+
+    log "===== End network diagnostic snapshot ====="
+}
+
+log "Network watchdog started; interface=$INTERFACE gateway=$GATEWAY"
+
+while true; do
+    if ping -c 1 -W 2 "$GATEWAY" >/dev/null 2>&1; then
+        if (( consecutive_failures >= FAILURE_THRESHOLD )); then
+            outage_end=$(date +%s)
+            outage_seconds=$((outage_end - outage_start))
+
+            log "Network connectivity restored after approximately ${outage_seconds} seconds."
+        fi
+
+        consecutive_failures=0
+        outage_start=""
+    else
+        ((consecutive_failures++))
+
+        if (( consecutive_failures == 1 )); then
+            outage_start=$(date +%s)
+            log "Gateway connectivity check failed."
+        fi
+
+        if (( consecutive_failures == FAILURE_THRESHOLD )); then
+            log "Gateway connectivity failed ${FAILURE_THRESHOLD} consecutive checks."
+            snapshot
+        fi
+    fi
+
+    sleep "$CHECK_INTERVAL"
+done
