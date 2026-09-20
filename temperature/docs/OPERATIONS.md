@@ -17,7 +17,43 @@ The collector is the core service.
 The Hubitat publisher is optional and is controlled by
 `HUBITAT_PUBLISH_ENABLED` in `config/pond.env`.
 
+## Administration Command
+
+Normal Pond Monitor administration is performed via:
+
+`pond-monitor`
+
+This command is installed as:
+
+`/usr/local/bin/pond-monitor -> /opt/pond-monitor/tools/pond-monitor`
+
+The available commands are:
+
+```bash
+pond-monitor status
+pond-monitor version
+pond-monitor logs
+pond-monitor logs -f
+sudo pond-monitor install
+sudo pond-monitor refresh
+```
+
+The following sections document the underlying systemd, journalctl, and Git
+commands for troubleshooting and recovery.
+
 ## Service Status
+
+For the normal overall status check:
+
+```bash
+pond-monitor status
+```
+
+This reports service state, the deployed Git version and working-tree state,
+the collector TCP health check, and current and rolling 24-hour InfluxDB
+temperature data.
+
+For detailed systemd status:
 
 Check both services:
 
@@ -65,6 +101,29 @@ This revalidates configuration and hardware, reinstalls the systemd units, and
 verifies the services.
 
 ## Logs
+
+Show the most recent logs from both services:
+
+```bash
+pond-monitor logs
+```
+
+Follow both services live:
+
+```bash
+pond-monitor logs -f
+```
+
+Limit output to one service:
+
+```bash
+pond-monitor logs collector
+pond-monitor logs hubitat
+```
+
+Add `-f` to either command to follow that service live.
+
+The underlying journal can also be queried directly:
 
 Collector logs:
 
@@ -224,13 +283,19 @@ Local configuration is stored in:
 After changing configuration, run:
 
 ```bash
-cd /opt/pond-monitor
-sudo ./install.sh
+sudo pond-monitor install
 ```
 
 This validates the new configuration before completing deployment.
 
-Do not put passwords or Hubitat access tokens into source files,
+The equivalent direct installer command is:
+
+```bash
+cd /opt/pond-monitor
+sudo ./install.sh
+```
+
+Do not put passwords, IPs/hostnames or access tokens into source files,
 documentation, or `pond.env.example`.
 
 ## DS18B20 Sensor
@@ -271,6 +336,12 @@ sudo reboot
 After reconnecting:
 
 ```bash
+pond-monitor status
+```
+
+For a direct systemd check:
+
+```bash
 systemctl is-active pond-collector.service
 systemctl is-active pond-hubitat.service
 ```
@@ -281,16 +352,22 @@ Then check recent collector output:
 journalctl -b -u pond-collector.service -n 30 --no-pager
 ```
 
-## Application Updates
-
-After updating the files under `/opt/pond-monitor`, run:
+Then check recent collector output:
 
 ```bash
-sudo ./install.sh
+journalctl -b -u pond-collector.service -n 30 --no-pager
 ```
 
-The installer is designed to be rerunnable and preserves the existing local
-`config/pond.env`.
+## Application Updates
+
+For a normal application update from Git:
+
+```bash
+sudo pond-monitor refresh
+```
+
+See **Git Deployment and Updates** below for details and the manual recovery
+procedure.
 
 ## Important Local State
 
@@ -415,39 +492,58 @@ Machine-specific configuration remains in:
 
 ### Update from Git
 
-Fetch and fast-forward the production checkout:
+The normal production update is:
+
+```bash
+sudo pond-monitor refresh
+```
+
+The refresh command:
+
+- requires root privileges;
+- requires a clean Git working tree;
+- updates the production repository with `git pull --ff-only`;
+- runs the Pond Monitor installer;
+- verifies the deployed services and health check; and
+- reports the deployed Git version.
+
+The command deliberately refuses to update a dirty working tree. Do not bypass
+this check without first determining why the repository contains local changes.
+
+After an update, verify the installation with:
+
+```bash
+pond-monitor status
+pond-monitor version
+```
+
+The repository should report a clean working tree.
+
+### Manual Update / Recovery
+
+If the administration command itself is unavailable or an update must be
+performed manually:
 
 ```bash
 cd /opt/pond-monitor-repo
 git pull --ff-only
-```
 
-Then apply the deployment:
-
-```bash
 cd /opt/pond-monitor
 sudo ./install.sh
 ```
 
-Verify the services:
+Then verify:
+
+```bash
+pond-monitor status
+```
+
+If `pond-monitor` is unavailable, use the underlying service checks:
 
 ```bash
 systemctl is-active pond-collector.service pond-hubitat.service
 ```
 
-Both should report `active`.
-
-Check the repository afterward:
-
-```bash
-cd /opt/pond-monitor-repo
-git status
-```
-
-The working tree should be clean. Runtime state and `config/pond.env` are
-ignored and therefore do not normally appear in Git status.
-
 Ideally, do not develop directly on the Raspberry Pi. Make source and 
 documentation changes in the Git repository on a development machine, 
-push them to GitHub, then use the update procedure above on the Pi.
-
+push them to GitHub, then use `sudo pond-monitor refresh` on the Pi.
