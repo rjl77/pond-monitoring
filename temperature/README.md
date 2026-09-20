@@ -143,10 +143,13 @@ Hubitat, and systemd troubleshooting.
 
 ## Examples
 
-### Updating via `pond-monitor`
+### Refresh via `pond-monitor refresh`
 
-![pond-monitor example](pond-monitor-example.png)
+![pond-monitor refresh example](pond-monitor-refresh-example.png)
 
+### Status check via `pond-monitor status`
+
+![pond-monitor status example](pond-monitor-status-example.png)
 
 ### Grafana
 
