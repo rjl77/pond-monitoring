@@ -82,11 +82,11 @@ show_status() {
     echo
 
     echo "Services"
-    for service in pond-collector.service pond-hubitat.service; do
+    for service in pond-collector.service pond-hubitat.service pond-network-watchdog.service; do
         enabled=$(systemctl is-enabled "$service" 2>/dev/null || true)
         active=$(systemctl is-active "$service" 2>/dev/null || true)
 
-        printf "  %-24s enabled=%-8s running=%s\n" \
+        printf "  %-31s enabled=%-8s running=%s\n" \
             "$service" "$enabled" "$active"
     done
 
