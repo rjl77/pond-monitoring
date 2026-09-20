@@ -197,8 +197,9 @@ The installer:
 9. Installs the `pond-monitor` administration command.
 10. Enables and restarts the collector.
 11. Enables/restarts or disables the Hubitat publisher according to config.
-12. Verifies the running services.
-13. Verifies the collector TCP health listener.
+12. Enables and restarts the network diagnostic watchdog.
+13. Verifies the running services.
+14. Verifies the collector TCP health listener.
 
 The installer is idempotent and may be rerun after code or configuration
 changes. After the initial installation, the preferred interface for rerunning
@@ -221,6 +222,7 @@ The installer creates:
 ```text
 /etc/systemd/system/pond-collector.service
 /etc/systemd/system/pond-hubitat.service
+/etc/systemd/system/pond-network-watchdog.service
 ```
 
 The source templates remain under:
@@ -229,10 +231,28 @@ The source templates remain under:
 /opt/pond-monitor/systemd/
 ```
 
-The templates contain `@SERVICE_USER@` and `@SERVICE_GROUP@` placeholders.
-`install.sh` substitutes the values from `pond.env` when installing them.
+The collector and Hubitat templates contain `@SERVICE_USER@` and
+`@SERVICE_GROUP@` placeholders. `install.sh` substitutes the values from
+`pond.env` when installing them.
+
+The network watchdog runs as root so that a future recovery action can be
+added without changing its service privilege model. Its current behavior is
+diagnostic only; it does not reconnect Wi-Fi or reboot the system.
 
 Do not copy the templates directly into `/etc/systemd/system`.
+
+### Network Diagnostic Watchdog
+
+`pond-network-watchdog.service` runs continuously and checks LAN connectivity
+every 60 seconds. It tests the default gateway and, when configured, the
+InfluxDB and Hubitat hosts.
+
+After two consecutive failed checks, it records a network diagnostic snapshot
+in the system journal. When connectivity returns, it records the outage
+duration.
+
+The watchdog is diagnostic only. It does not currently reconnect Wi-Fi or
+reboot the Raspberry Pi.
 
 ## Installed Administration Command
 
@@ -279,6 +299,7 @@ For direct systemd verification:
 ```bash
 systemctl is-active pond-collector.service
 systemctl is-active pond-hubitat.service
+systemctl is-active pond-network-watchdog.service
 ```
 
 For an enabled Hubitat publisher, both should report:
@@ -292,6 +313,7 @@ Check enablement:
 ```bash
 systemctl is-enabled pond-collector.service
 systemctl is-enabled pond-hubitat.service
+systemctl is-enabled pond-network-watchdog.service
 ```
 
 Recent logs can be viewed with:
@@ -305,6 +327,7 @@ or directly through the journal:
 ```bash
 journalctl -u pond-collector.service -n 30 --no-pager
 journalctl -u pond-hubitat.service -n 30 --no-pager
+journalctl -u pond-network-watchdog.service -n 30 --no-pager
 ```
 
 ## Reboot Test
@@ -321,8 +344,9 @@ After reconnecting, verify:
 pond-monitor status
 ```
 
-Confirm that both expected services are active, the TCP health check passes,
-and new sensor readings are reaching InfluxDB.
+Confirm that the collector and network watchdog are active, the optional 
+Hubitat publisher is active when enabled, the TCP health check passes, and 
+new sensor readings are reaching InfluxDB.
 
 ## Secrets
 
