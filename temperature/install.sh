@@ -302,6 +302,23 @@ systemctl daemon-reload
 log "systemd service files installed."
 
 # ----------------------------------------------------------------------
+# Install administration command
+# ----------------------------------------------------------------------
+
+POND_MONITOR_TOOL="$APP_DIR/tools/pond-monitor"
+POND_MONITOR_COMMAND="/usr/local/bin/pond-monitor"
+
+if [[ ! -f "$POND_MONITOR_TOOL" ]]; then
+    die "Pond Monitor administration tool not found: $POND_MONITOR_TOOL"
+fi
+
+chmod 755 "$POND_MONITOR_TOOL"
+
+ln -sfn "$POND_MONITOR_TOOL" "$POND_MONITOR_COMMAND"
+
+log "Administration command installed: $POND_MONITOR_COMMAND"
+
+# ----------------------------------------------------------------------
 # Enable and start services
 # ----------------------------------------------------------------------
 
