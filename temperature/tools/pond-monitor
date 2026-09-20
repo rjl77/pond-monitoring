@@ -54,8 +54,6 @@ from pond.config import load_env
 from pond.influx import get_water_stats_24h
 
 load_env()
-
-load_config()
 stats = get_water_stats_24h()
 
 timestamp = datetime.fromisoformat(
