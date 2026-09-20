@@ -77,11 +77,14 @@ def write_points(client, points):
     return client.write_points(points)
 
 
-def get_water_stats_24h():
+def get_temperature_stats_24h(sensor):
     """
-    Return the latest, minimum, and maximum water temperatures
-    recorded during the previous 24 hours.
+    Return the latest, minimum, and maximum temperatures
+    recorded for a sensor during the previous 24 hours.
     """
+
+    if sensor not in ("water", "air"):
+        raise ValueError(f"Unsupported temperature sensor: {sensor}")
 
     client = create_client()
 
@@ -89,13 +92,13 @@ def get_water_stats_24h():
         latest_result = client.query(
             "SELECT LAST(value) AS value "
             "FROM temperature "
-            "WHERE sensor='water' AND time >= now() - 24h"
+            f"WHERE sensor='{sensor}' AND time >= now() - 24h"
         )
 
         stats_result = client.query(
             "SELECT MIN(value) AS minimum, MAX(value) AS maximum "
             "FROM temperature "
-            "WHERE sensor='water' AND time >= now() - 24h"
+            f"WHERE sensor='{sensor}' AND time >= now() - 24h"
         )
 
         latest = next(latest_result.get_points(), None)
@@ -103,7 +106,8 @@ def get_water_stats_24h():
 
         if latest is None or stats is None:
             raise RuntimeError(
-                "InfluxDB contains no water-temperature data for the last 24 hours"
+                f"InfluxDB contains no {sensor}-temperature data "
+                "for the last 24 hours"
             )
 
         return {
@@ -115,3 +119,9 @@ def get_water_stats_24h():
 
     finally:
         client.close()
+
+
+def get_water_stats_24h():
+    """Return 24-hour water-temperature statistics."""
+
+    return get_temperature_stats_24h("water")

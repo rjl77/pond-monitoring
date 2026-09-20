@@ -51,20 +51,28 @@ show_influx_status() {
 from datetime import datetime, timezone
 
 from pond.config import load_env
-from pond.influx import get_water_stats_24h
+from pond.influx import get_temperature_stats_24h
 
 load_env()
-stats = get_water_stats_24h()
 
-timestamp = datetime.fromisoformat(
-    stats["current_time"].replace("Z", "+00:00")
-)
-age = int((datetime.now(timezone.utc) - timestamp).total_seconds())
+def show_sensor(label, sensor):
+    stats = get_temperature_stats_24h(sensor)
 
-print(f"  Water:      {stats['current']:.2f} F")
-print(f"  24h low:    {stats['minimum']:.2f} F")
-print(f"  24h high:   {stats['maximum']:.2f} F")
-print(f"  Last write: {age} seconds ago")
+    timestamp = datetime.fromisoformat(
+        stats["current_time"].replace("Z", "+00:00")
+    )
+    age = int((datetime.now(timezone.utc) - timestamp).total_seconds())
+
+    print(f"  {label}:")
+    print(f"    Current:    {stats['current']:.2f} F")
+    print(f"    24h low:    {stats['minimum']:.2f} F")
+    print(f"    24h high:   {stats['maximum']:.2f} F")
+    print(f"    Last write: {age} seconds ago")
+
+
+show_sensor("Water", "water")
+print()
+show_sensor("Air", "air")
 PY
 }
 
