@@ -173,16 +173,29 @@ run_refresh() {
 }
 
 show_logs() {
-    local target="${1:-all}"
-    local follow="${2:-}"
+    local target="all"
+    local follow=""
+
+    for arg in "$@"; do
+        case "$arg" in
+            collector|hubitat)
+                target="$arg"
+                ;;
+            -f|--follow)
+                follow="-f"
+                ;;
+            *)
+                echo "Unknown logs option: $arg" >&2
+                echo "Usage: $PROGRAM_NAME logs [collector|hubitat] [-f]" >&2
+                return 1
+                ;;
+        esac
+    done
 
     local journal_args=(-n 50)
 
     if [[ "$follow" == "-f" ]]; then
         journal_args+=(-f)
-    elif [[ -n "$follow" ]]; then
-        echo "Unknown logs option: $follow" >&2
-        return 1
     fi
 
     case "$target" in
@@ -202,11 +215,6 @@ show_logs() {
                 -u pond-hubitat.service \
                 "${journal_args[@]}"
             ;;
-        *)
-            echo "Unknown log target: $target" >&2
-            echo "Usage: $PROGRAM_NAME logs [collector|hubitat] [-f]" >&2
-            return 1
-            ;;
     esac
 }
 
@@ -222,7 +230,7 @@ case "${1:-help}" in
         ;;
     logs)
         shift
-        show_logs "${1:-all}" "${2:-}"
+        show_logs "$@"
         ;;
     version)
         show_version
