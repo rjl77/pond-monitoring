@@ -1,34 +1,68 @@
 # Pond Monitoring Project
 
-Scripts (mostly Python, so far) to monitor various aspects of a backyard koi pond - environmental conditions, including temperature, water level, and potential threats (e.g., predators). Nothing terribly fancy or intelligent, just some messing around with a mixture of Raspberry Pi, sensor devices, a Hubitat home automation hub, IP cameras and computer vision.
+A collection of projects for monitoring and automating various aspects of a
+backyard koi pond, including environmental conditions and potential threats
+such as predators.
+
+The project combines Raspberry Pi systems, environmental sensors, Hubitat home
+automation, InfluxDB, IP cameras, and computer vision. Some components are
+production services running continuously, while others are experiments,
+utilities, or works in progress.
 
 ## Project Overview
 
-The project consists of several components:
+The repository currently contains several related projects:
 
-- **Temperature Monitoring:**  
-  The `temperature/` subfolder contains three scripts:
-  - **Hubitat Temperature Monitor:**  
-    Polls a water temperature sensor, calculates current, high, and low temperatures over a rolling 24-hour window, and sends the data to a Hubitat home automation hub via API calls.
-  - **Cacti Temperature Collection Script:**  
-    Reads air and water temperatures from 1-Wire sensors and prints the values (formatted for charting via Cacti or a similar platform).
-  - **InfluxDB Temperature Collection Script:**  
-    Reads air and water temperatures from 1-Wire sensors and/or DHT sensors and sends them to an InfluxDB server as time series data. Update: DHT sensors can be flaky, so I added an option to retrieve air temperature via API call.    
+### Temperature Monitoring
 
-- **Predator Detection via Computer Vision:**  
-  (Coming soon) Scripts that use machine learning and computer vision to identity & alert for potential predators (focussing on Herons for now): training models/weights, analyzing video feeds, testing tools, etc. 
+The `temperature/` project is a Raspberry Pi-based environmental monitoring
+system that collects water temperature from a DS18B20 1-Wire sensor and writes
+readings to InfluxDB.
 
-- **IP Camera:**  
-  Some simple scripts written to work with consumer IP cameras to trigger Hubitat API calls when motion is detected.
+Air temperature can optionally be obtained from Hubitat or a locally connected
+DHT22 sensor. This will probably be updated to allow for different sources
+(other sensors, API calls, etc.).
 
-  The `ip-camera/` subfolder contains two scripts:
-  - **Dummy TCP Server:**  
-    A simple Python script, intended to be run as a service, that creates a basic TCP listener. Useful for consumer IP cameras who can connect to other devices (such as SMTP or FTP) when motion is detected. This works in conjunction with:
-  - **Hubitat Motion Trigger**
-    A bash script, also intended to be run as a service, that monitors when SYN packets are sent to a specific port (via `tcpdump`), and then sends an API call to a Hubitat virtual device (such as a Virtual Switch or Motion Sensor). Can manage multiple source devices and Hubitat virtual devices. Can obviously be adapted for whatever target. 
+Failed InfluxDB writes are retained in a local journal and
+reconciled when the database becomes available again.
 
-- **Water Level Monitoring:**  
-  (Planned) Future scripts to monitor the water level in the pond.
+An optional Hubitat publisher reads current and rolling 24-hour water
+temperature statistics from InfluxDB and publishes them to Hubitat devices
+and dashboards.
 
+The application runs as systemd services and includes a `pond-monitor`
+administration command for routine management:
 
+```bash
+pond-monitor status
+pond-monitor version
+pond-monitor logs
+sudo pond-monitor install
+sudo pond-monitor refresh
+```
 
+See [`temperature/README.md`](temperature/README.md) for architecture,
+installation, configuration, and operational documentation.
+
+### Predator Detection via Computer Vision
+
+The `computer-vision/` project contains machine-learning and computer-vision
+work for detecting and alerting on potential pond predators and other wildlife.
+
+It includes model-training and testing tools, object-detection experiments,
+video-stream analysis, and supporting utilities. Current work includes custom
+object-detection models for animals such as herons and raccoons.
+
+### IP Camera Integration
+
+The `ip-camera/` project contains utilities for integrating consumer IP cameras
+with Hubitat and other automation systems.
+
+These include a lightweight TCP listener that can receive connections generated
+by camera events and scripts that detect those connections and trigger Hubitat
+virtual devices through API calls.
+
+### Water Level Monitoring
+
+(Planned) Monitor pond water level, reporting status and alerting on situations 
+requiring attention.
