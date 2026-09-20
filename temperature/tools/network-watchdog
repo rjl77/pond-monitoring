@@ -36,6 +36,14 @@ log() {
     logger -t pond-network-watchdog "$*"
 }
 
+network_reachable() {
+    ping -c 1 -W 2 "$GATEWAY" >/dev/null 2>&1 && return 0
+    ping -c 1 -W 2 "$INFLUX_HOST" >/dev/null 2>&1 && return 0
+    ping -c 1 -W 2 "$HUBITAT_HOST" >/dev/null 2>&1 && return 0
+
+    return 1
+}
+
 snapshot() {
     log "===== Network diagnostic snapshot ====="
 
@@ -67,7 +75,7 @@ snapshot() {
 log "Network watchdog started; interface=$INTERFACE gateway=$GATEWAY"
 
 while true; do
-    if ping -c 1 -W 2 "$GATEWAY" >/dev/null 2>&1; then
+    if network_reachable; then
         if (( consecutive_failures >= FAILURE_THRESHOLD )); then
             outage_end=$(date +%s)
             outage_seconds=$((outage_end - outage_start))
@@ -82,11 +90,11 @@ while true; do
 
         if (( consecutive_failures == 1 )); then
             outage_start=$(date +%s)
-            log "Gateway connectivity check failed."
+            log "LAN connectivity check failed."
         fi
 
         if (( consecutive_failures == FAILURE_THRESHOLD )); then
-            log "Gateway connectivity failed ${FAILURE_THRESHOLD} consecutive checks."
+            log "LAN connectivity failed ${FAILURE_THRESHOLD} consecutive checks."
             snapshot
         fi
     fi
