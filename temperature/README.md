@@ -66,8 +66,10 @@ pond-monitor/
 │   └── pond/
 ├── systemd/
 │   ├── pond-collector.service
-│   └── pond-hubitat.service
+│   ├── pond-hubitat.service
+│   └── pond-network-watchdog.service
 ├── tools/
+│   ├── network-watchdog
 │   └── pond-monitor
 ├── .gitignore
 ├── install.sh
