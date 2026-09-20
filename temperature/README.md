@@ -3,13 +3,18 @@
 Pond Monitor is a Raspberry Pi-based environmental monitoring system for a
 backyard pond.
 
-It collects water temperature from a DS18B20 1-Wire sensor and writes readings
-to InfluxDB. Air temperature can optionally be obtained from Hubitat or a local
-DHT22 sensor.
+At present, it collects water temperature from a DS18B20 1-Wire sensor and writes 
+readings to InfluxDB. Air temperature can optionally be obtained from Hubitat or a 
+local DHT22 sensor (DS18B20 sensors don't give accurate readings in sunlight).
 
 A separate, optional Hubitat publisher reads the rolling 24-hour water
 temperature statistics from InfluxDB and publishes the current, high, low, and
 update time to Hubitat devices.
+
+Pond Monitor includes a `pond-monitor` administration command that provides a
+single interface for routine operation and maintenance. It reports application
+and sensor status, displays logs, identifies the deployed Git version, reruns
+the installer, and safely pulls and deploys updates from Git.
 
 ## Architecture
 
@@ -48,13 +53,13 @@ the core application; Hubitat publishing is an optional integration.
 pond-monitor/
 ├── config/
 │   ├── pond.env.example
-│   └── pond.env
+│   └── pond.env                 # local, Git-ignored
 ├── docs/
 │   ├── INSTALL.md
 │   ├── OPERATIONS.md
 │   └── TROUBLESHOOTING.md
 ├── runtime/
-│   └── sensor_journal.log
+│   └── sensor_journal.log       # created at runtime, Git-ignored
 ├── src/
 │   ├── collector.py
 │   ├── hubitat.py
@@ -62,6 +67,8 @@ pond-monitor/
 ├── systemd/
 │   ├── pond-collector.service
 │   └── pond-hubitat.service
+├── tools/
+│   └── pond-monitor
 ├── .gitignore
 ├── install.sh
 ├── README.md
@@ -105,16 +112,24 @@ A lightweight TCP health listener is provided on the configured health port
 
 ## Installation
 
-See `docs/INSTALL.md`.
+See `docs/INSTALL.md` for initial deployment instructions.
 
-The normal deployment command is:
+For a fresh installation, run:
 
 ```bash
+cd /opt/pond-monitor
 sudo ./install.sh
 ```
 
-The installer is designed to be safely rerun after application or
-configuration changes.
+After installation, use the included administration command for normal maintenance:
+
+```bash
+sudo pond-monitor install
+sudo pond-monitor refresh
+```
+
+Use `install` after local configuration changes. Use `refresh` to pull and
+deploy application updates from Git.
 
 ## Operations
 
