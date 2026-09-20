@@ -143,6 +143,35 @@ run_install() {
     "$APP_DIR/install.sh"
 }
 
+run_refresh() {
+    if [[ $EUID -ne 0 ]]; then
+        echo "Refresh requires root privileges." >&2
+        echo "Run: sudo $PROGRAM_NAME refresh" >&2
+        return 1
+    fi
+
+    if [[ ! -d "$REPO_DIR/.git" ]]; then
+        echo "Git repository not found: $REPO_DIR" >&2
+        return 1
+    fi
+
+    if [[ -n "$(git -C "$REPO_DIR" status --porcelain)" ]]; then
+        echo "Refusing to refresh: Git working tree is not clean." >&2
+        git -C "$REPO_DIR" status --short >&2
+        return 1
+    fi
+
+    echo "Updating Pond Monitor..."
+    git -C "$REPO_DIR" pull --ff-only
+
+    echo
+    run_install
+
+    echo
+    echo "Refresh complete."
+    show_version
+}
+
 case "${1:-help}" in
     status)
         show_status
@@ -151,7 +180,7 @@ case "${1:-help}" in
         run_install
         ;;
     refresh)
-        echo "refresh: not implemented yet"
+        run_refresh
         ;;
     logs)
         echo "logs: not implemented yet"
