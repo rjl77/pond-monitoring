@@ -143,6 +143,11 @@ Hubitat, and systemd troubleshooting.
 
 ## Examples
 
+### Updating via `pond-monitor`
+
+![pond-monitor example](pond-monitor-example.png)
+
+
 ### Grafana
 
 ![Grafana example](grafana-example.png)
