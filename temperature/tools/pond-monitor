@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+
+set -u
+
+PROGRAM_NAME="pond-monitor"
+APP_DIR="/opt/pond-monitor"
+REPO_DIR="/opt/pond-monitor-repo"
+
+usage() {
+    cat <<EOF
+Usage: $PROGRAM_NAME <command>
+
+Commands:
+  status    Show Pond Monitor status
+  install   Run the Pond Monitor installer
+  refresh   Pull the latest version from Git and install it
+  logs      Show recent Pond Monitor logs
+  version   Show the installed Git version
+  help      Show this help
+EOF
+}
+
+show_version() {
+    if [[ ! -d "$REPO_DIR/.git" ]]; then
+        echo "Git repository not found: $REPO_DIR" >&2
+        return 1
+    fi
+
+    local branch
+    local commit
+    local commit_date
+    local dirty="no"
+
+    branch=$(git -C "$REPO_DIR" branch --show-current)
+    commit=$(git -C "$REPO_DIR" rev-parse --short HEAD)
+    commit_date=$(git -C "$REPO_DIR" log -1 --format='%ci')
+
+    if [[ -n "$(git -C "$REPO_DIR" status --porcelain)" ]]; then
+        dirty="yes"
+    fi
+
+    echo "Pond Monitor"
+    echo "  Branch:      $branch"
+    echo "  Commit:      $commit"
+    echo "  Commit date: $commit_date"
+    echo "  Dirty:       $dirty"
+}
+
+show_status() {
+    echo "Pond Monitor"
+    echo "============"
+    echo
+
+    echo "Services"
+    for service in pond-collector.service pond-hubitat.service; do
+        enabled=$(systemctl is-enabled "$service" 2>/dev/null || true)
+        active=$(systemctl is-active "$service" 2>/dev/null || true)
+
+        printf "  %-24s enabled=%-8s running=%s\n" \
+            "$service" "$enabled" "$active"
+    done
+
+    echo
+    echo "Git"
+
+    if [[ -d "$REPO_DIR/.git" ]]; then
+        branch=$(git -C "$REPO_DIR" branch --show-current)
+        commit=$(git -C "$REPO_DIR" rev-parse --short HEAD)
+
+        if [[ -n "$(git -C "$REPO_DIR" status --porcelain)" ]]; then
+            state="dirty"
+        else
+            state="clean"
+        fi
+
+        echo "  Branch:     $branch"
+        echo "  Commit:     $commit"
+        echo "  Repository: $state"
+    else
+        echo "  Repository: not found"
+    fi
+
+    echo
+    echo "Health"
+
+    if timeout 2 bash -c "echo >/dev/tcp/127.0.0.1/9991" 2>/dev/null; then
+        echo "  TCP 9991:   OK"
+    else
+        echo "  TCP 9991:   FAILED"
+    fi
+}
+
+case "${1:-help}" in
+    status)
+        show_status
+        ;;
+    install)
+        echo "install: not implemented yet"
+        ;;
+    refresh)
+        echo "refresh: not implemented yet"
+        ;;
+    logs)
+        echo "logs: not implemented yet"
+        ;;
+    version)
+        show_version
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1" >&2
+        echo >&2
+        usage >&2
+        exit 2
+        ;;
+esac
