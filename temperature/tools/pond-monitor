@@ -50,8 +50,10 @@ show_influx_status() {
     PYTHONPATH="$APP_DIR/src" python3 - <<'PY'
 from datetime import datetime, timezone
 
-from pond.config import load_config
+from pond.config import load_env
 from pond.influx import get_water_stats_24h
+
+load_env()
 
 load_config()
 stats = get_water_stats_24h()
