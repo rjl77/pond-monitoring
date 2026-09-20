@@ -172,6 +172,44 @@ run_refresh() {
     show_version
 }
 
+show_logs() {
+    local target="${1:-all}"
+    local follow="${2:-}"
+
+    local journal_args=(-n 50)
+
+    if [[ "$follow" == "-f" ]]; then
+        journal_args+=(-f)
+    elif [[ -n "$follow" ]]; then
+        echo "Unknown logs option: $follow" >&2
+        return 1
+    fi
+
+    case "$target" in
+        all)
+            journalctl \
+                -u pond-collector.service \
+                -u pond-hubitat.service \
+                "${journal_args[@]}"
+            ;;
+        collector)
+            journalctl \
+                -u pond-collector.service \
+                "${journal_args[@]}"
+            ;;
+        hubitat)
+            journalctl \
+                -u pond-hubitat.service \
+                "${journal_args[@]}"
+            ;;
+        *)
+            echo "Unknown log target: $target" >&2
+            echo "Usage: $PROGRAM_NAME logs [collector|hubitat] [-f]" >&2
+            return 1
+            ;;
+    esac
+}
+
 case "${1:-help}" in
     status)
         show_status
@@ -183,7 +221,8 @@ case "${1:-help}" in
         run_refresh
         ;;
     logs)
-        echo "logs: not implemented yet"
+        shift
+        show_logs "${1:-all}" "${2:-}"
         ;;
     version)
         show_version
