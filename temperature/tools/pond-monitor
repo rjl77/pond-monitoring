@@ -119,12 +119,28 @@ show_status() {
     fi
 }
 
+run_install() {
+    if [[ ! -f "$APP_DIR/install.sh" ]]; then
+        echo "Installer not found: $APP_DIR/install.sh" >&2
+        return 1
+    fi
+
+    if [[ $EUID -ne 0 ]]; then
+        echo "Install requires root privileges." >&2
+        echo "Run: sudo $PROGRAM_NAME install" >&2
+        return 1
+    fi
+
+    echo "Running Pond Monitor installer..."
+    "$APP_DIR/install.sh"
+}
+
 case "${1:-help}" in
     status)
         show_status
         ;;
     install)
-        echo "install: not implemented yet"
+        run_install
         ;;
     refresh)
         echo "refresh: not implemented yet"
