@@ -108,6 +108,7 @@ def get_water_stats_24h():
 
         return {
             "current": latest["value"],
+            "current_time": latest["time"],
             "minimum": stats["minimum"],
             "maximum": stats["maximum"],
         }

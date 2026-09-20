@@ -46,6 +46,28 @@ show_version() {
     echo "  Dirty:       $dirty"
 }
 
+show_influx_status() {
+    PYTHONPATH="$APP_DIR/src" python3 - <<'PY'
+from datetime import datetime, timezone
+
+from pond.config import load_config
+from pond.influx import get_water_stats_24h
+
+load_config()
+stats = get_water_stats_24h()
+
+timestamp = datetime.fromisoformat(
+    stats["current_time"].replace("Z", "+00:00")
+)
+age = int((datetime.now(timezone.utc) - timestamp).total_seconds())
+
+print(f"  Water:      {stats['current']:.2f} F")
+print(f"  24h low:    {stats['minimum']:.2f} F")
+print(f"  24h high:   {stats['maximum']:.2f} F")
+print(f"  Last write: {age} seconds ago")
+PY
+}
+
 show_status() {
     echo "Pond Monitor"
     echo "============"
@@ -87,6 +109,13 @@ show_status() {
         echo "  TCP 9991:   OK"
     else
         echo "  TCP 9991:   FAILED"
+    fi
+
+    echo
+    echo "InfluxDB"
+
+    if ! show_influx_status; then
+        echo "  Status:     FAILED"
     fi
 }
 
