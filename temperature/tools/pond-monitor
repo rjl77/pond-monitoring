@@ -178,21 +178,46 @@ show_logs() {
 
     for arg in "$@"; do
         case "$arg" in
-            collector|hubitat)
+            collector|hubitat|watchdog)
                 target="$arg"
                 ;;
             -f|--follow)
                 follow="-f"
                 ;;
+            -h|--help)
+                cat <<EOF
+Usage: $PROGRAM_NAME logs [collector|hubitat|watchdog] [-f]
+
+Targets:
+  collector    Show collector logs
+  hubitat      Show Hubitat publisher logs
+  watchdog     Show network diagnostic watchdog logs
+
+Options:
+  -f, --follow Follow logs continuously
+  -h, --help   Show this help
+
+With no target, logs from all Pond Monitor services are shown.
+
+Examples:
+  $PROGRAM_NAME logs
+  $PROGRAM_NAME logs collector
+  $PROGRAM_NAME logs hubitat
+  $PROGRAM_NAME logs watchdog
+  $PROGRAM_NAME logs -f
+  $PROGRAM_NAME logs watchdog -f
+EOF
+                return 0
+                ;;
             *)
                 echo "Unknown logs option: $arg" >&2
-                echo "Usage: $PROGRAM_NAME logs [collector|hubitat] [-f]" >&2
+                echo "Usage: $PROGRAM_NAME logs [collector|hubitat|watchdog] [-f]" >&2
                 return 1
                 ;;
         esac
     done
 
-    local journal_args=(-n 50)
+    local journal_args=(-n 50 --no-pager)
 
     if [[ "$follow" == "-f" ]]; then
         journal_args+=(-f)
@@ -203,6 +228,7 @@ show_logs() {
             journalctl \
                 -u pond-collector.service \
                 -u pond-hubitat.service \
+                -u pond-network-watchdog.service \
                 "${journal_args[@]}"
             ;;
         collector)
@@ -213,6 +239,11 @@ show_logs() {
         hubitat)
             journalctl \
                 -u pond-hubitat.service \
+                "${journal_args[@]}"
+            ;;
+        watchdog)
+            journalctl \
+                -u pond-network-watchdog.service \
                 "${journal_args[@]}"
             ;;
     esac
