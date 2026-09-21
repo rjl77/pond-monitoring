@@ -90,12 +90,17 @@ The installed systemd services are:
 ```text
 pond-collector.service
 pond-hubitat.service
+pond-network-watchdog.service
 ```
 
 The collector normally runs one collection cycle every 60 seconds.
 
 The Hubitat publisher normally publishes every 15 minutes and can be disabled
 independently.
+
+The network watchdog checks LAN connectivity every 60 seconds and records
+diagnostic information after repeated connectivity failures. It is diagnostic
+only and does not currently reconnect the network or reboot the system.
 
 ## Reliability
 
