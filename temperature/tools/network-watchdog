@@ -2,7 +2,6 @@
 
 set -u
 
-INTERFACE="wlan0"
 ENV_FILE="/opt/pond-monitor/config/pond.env"
 
 if [[ ! -r "$ENV_FILE" ]]; then
@@ -16,10 +15,19 @@ set -a
 source "$ENV_FILE"
 set +a
 
-GATEWAY=$(ip route show default | awk '/default/ {print $3; exit}')
+# Determine the active interface and gateway from the default route.
+DEFAULT_ROUTE=$(ip route show default | head -n 1)
+
+GATEWAY=$(awk '{for (i=1; i<=NF; i++) if ($i=="via") print $(i+1)}' <<< "$DEFAULT_ROUTE")
+INTERFACE=$(awk '{for (i=1; i<=NF; i++) if ($i=="dev") print $(i+1)}' <<< "$DEFAULT_ROUTE")
 
 if [[ -z "$GATEWAY" ]]; then
     echo "Unable to determine default gateway." >&2
+    exit 1
+fi
+
+if [[ -z "$INTERFACE" ]]; then
+    echo "Unable to determine active network interface." >&2
     exit 1
 fi
 
@@ -56,8 +64,13 @@ snapshot() {
     nmcli -f GENERAL.STATE,GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY \
         device show "$INTERFACE" 2>&1 | logger -t pond-network-watchdog
 
-    log "--- Wi-Fi link ---"
-    iw dev "$INTERFACE" link 2>&1 | logger -t pond-network-watchdog
+    if [[ -d "/sys/class/net/$INTERFACE/wireless" ]]; then
+        log "--- Wi-Fi link ---"
+        iw dev "$INTERFACE" link 2>&1 | logger -t pond-network-watchdog
+    else
+        log "--- Interface details ---"
+        ip -details link show "$INTERFACE" 2>&1 | logger -t pond-network-watchdog
+    fi
 
     log "--- Routes ---"
     ip route 2>&1 | logger -t pond-network-watchdog
