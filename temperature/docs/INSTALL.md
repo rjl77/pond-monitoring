@@ -27,7 +27,7 @@ For a Git deployment, this is a symbolic link to the `temperature/` project in
 the production checkout:
 
 ```text
-/opt/pond-collector -> /opt/pond-monitor-repo/temperature
+/opt/pond-collector -> /opt/pond-monitoring/temperature
 ```
 
 The application must be present at `/opt/pond-collector` before running the
