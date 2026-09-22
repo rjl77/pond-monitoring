@@ -1,5 +1,5 @@
 [Unit]
-Description=Pond Monitor Network Diagnostic Watchdog
+Description=Pond Collector Network Diagnostic Watchdog
 After=network-online.target
 Wants=network-online.target
 

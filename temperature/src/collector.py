@@ -187,7 +187,7 @@ def main():
 
     sensor_id = require("WATER_SENSOR_ID")
 
-    log.info("Starting Pond Monitor collector.")
+    log.info("Starting Pond Collector.")
     log.info("Water sensor: %s", sensor_id)
     log.info("Poll interval: %d seconds", poll_interval)
 

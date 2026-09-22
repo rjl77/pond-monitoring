@@ -1,5 +1,5 @@
 [Unit]
-Description=Pond Monitor Sensor Collector
+Description=Pond Collector
 Wants=network-online.target
 After=network-online.target
 
