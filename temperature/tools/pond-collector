@@ -39,7 +39,7 @@ show_version() {
         dirty="yes"
     fi
 
-    echo "Pond Monitor"
+    echo "Pond Collector"
     echo "  Branch:      $branch"
     echo "  Commit:      $commit"
     echo "  Commit date: $commit_date"
@@ -77,7 +77,7 @@ PY
 }
 
 show_status() {
-    echo "Pond Monitor"
+    echo "Pond Collector"
     echo "============"
     echo
 
@@ -139,7 +139,7 @@ run_install() {
         return 1
     fi
 
-    echo "Running Pond Monitor installer..."
+    echo "Running Pond Collector installer..."
     "$APP_DIR/install.sh"
 }
 
@@ -161,7 +161,7 @@ run_refresh() {
         return 1
     fi
 
-    echo "Updating Pond Monitor..."
+    echo "Updating Pond Collector..."
     git -C "$REPO_DIR" pull --ff-only
 
     echo
@@ -197,7 +197,7 @@ Options:
   -f, --follow Follow logs continuously
   -h, --help   Show this help
 
-With no target, logs from all Pond Monitor services are shown.
+With no target, logs from all Pond Collector services are shown.
 
 Examples:
   $PROGRAM_NAME logs

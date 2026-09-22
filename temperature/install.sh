@@ -7,11 +7,11 @@ CONFIG_FILE="$APP_DIR/config/pond.env"
 CONFIG_EXAMPLE="$APP_DIR/config/pond.env.example"
 
 log() {
-    printf '[pond-monitor] %s\n' "$*"
+    printf '[pond-collector] %s\n' "$*"
 }
 
 die() {
-    printf '[pond-monitor] ERROR: %s\n' "$*" >&2
+    printf '[pond-collector] ERROR: %s\n' "$*" >&2
     exit 1
 }
 
@@ -316,7 +316,6 @@ log "systemd service files installed."
 
 POND_COLLECTOR_TOOL="$APP_DIR/tools/pond-collector"
 POND_COLLECTOR_COMMAND="/usr/local/bin/pond-collector"
-POND_MONITOR_COMPAT_COMMAND="/usr/local/bin/pond-monitor"
 
 if [[ ! -f "$POND_COLLECTOR_TOOL" ]]; then
     die "Pond Collector administration tool not found: $POND_COLLECTOR_TOOL"
@@ -325,16 +324,14 @@ fi
 chmod 755 "$POND_COLLECTOR_TOOL"
 
 ln -sfn "$POND_COLLECTOR_TOOL" "$POND_COLLECTOR_COMMAND"
-ln -sfn "$POND_COLLECTOR_COMMAND" "$POND_MONITOR_COMPAT_COMMAND"
 
 log "Administration command installed: $POND_COLLECTOR_COMMAND"
-log "Compatibility command installed: $POND_MONITOR_COMPAT_COMMAND"
 
 # ----------------------------------------------------------------------
 # Enable and start services
 # ----------------------------------------------------------------------
 
-log "Enabling Pond Monitor collector..."
+log "Enabling Pond Collector..."
 
 systemctl enable pond-collector.service
 systemctl restart pond-collector.service
@@ -356,20 +353,20 @@ log "Enabling network diagnostic watchdog..."
 systemctl enable pond-network-watchdog.service
 systemctl restart pond-network-watchdog.service
 
-log "Pond Monitor services configured."
+log "Pond Collector services configured."
 
 # ----------------------------------------------------------------------
 # Post-install verification
 # ----------------------------------------------------------------------
 
-log "Verifying Pond Monitor services..."
+log "Verifying Pond Collector services..."
 
 # Give the services a moment to complete startup.
 sleep 2
 
 if ! systemctl is-active --quiet pond-collector.service; then
     systemctl status pond-collector.service --no-pager || true
-    die "Pond Monitor collector failed to start."
+    die "Pond Collector failed to start."
 fi
 
 log "Collector service is active."
