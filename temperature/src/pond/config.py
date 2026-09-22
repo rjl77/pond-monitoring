@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 
-DEFAULT_CONFIG_FILE = Path("/opt/pond-monitor/config/pond.env")
+DEFAULT_CONFIG_FILE = Path("/opt/pond-collector/config/pond.env")
 
 
 def load_env(path=DEFAULT_CONFIG_FILE):

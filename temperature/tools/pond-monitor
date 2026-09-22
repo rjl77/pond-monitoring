@@ -3,7 +3,7 @@
 set -u
 
 PROGRAM_NAME="pond-monitor"
-APP_DIR="/opt/pond-monitor"
+APP_DIR="/opt/pond-collector"
 REPO_DIR="/opt/pond-monitor-repo"
 
 usage() {
@@ -11,10 +11,10 @@ usage() {
 Usage: $PROGRAM_NAME <command>
 
 Commands:
-  status    Show Pond Monitor status
-  install   Run the Pond Monitor installer
+  status    Show Pond Collector status
+  install   Run the Pond Collector installer
   refresh   Pull the latest version from Git and install it
-  logs      Show recent Pond Monitor logs
+  logs      Show recent Pond Collector logs
   version   Show the installed Git version
   help      Show this help
 EOF

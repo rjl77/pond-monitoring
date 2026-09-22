@@ -2,7 +2,7 @@
 
 set -u
 
-ENV_FILE="/opt/pond-monitor/config/pond.env"
+ENV_FILE="/opt/pond-collector/config/pond.env"
 
 if [[ ! -r "$ENV_FILE" ]]; then
     echo "Cannot read configuration: $ENV_FILE" >&2

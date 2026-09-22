@@ -7,10 +7,10 @@ After=network-online.target
 Type=simple
 User=@SERVICE_USER@
 Group=@SERVICE_GROUP@
-WorkingDirectory=/opt/pond-monitor
+WorkingDirectory=/opt/pond-collector
 Environment=PYTHONUNBUFFERED=1
-Environment=PYTHONPATH=/opt/pond-monitor/src
-ExecStart=/usr/bin/python3 /opt/pond-monitor/src/hubitat.py
+Environment=PYTHONPATH=/opt/pond-collector/src
+ExecStart=/usr/bin/python3 /opt/pond-collector/src/hubitat.py
 
 Restart=on-failure
 RestartSec=10

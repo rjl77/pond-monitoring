@@ -6,7 +6,7 @@ from pathlib import Path
 log = logging.getLogger("pond_collector")
 
 DEFAULT_JOURNAL_FILE = Path(
-    "/opt/pond-monitor/runtime/sensor_journal.log"
+    "/opt/pond-collector/runtime/sensor_journal.log"
 )
 
 

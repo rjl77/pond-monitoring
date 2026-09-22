@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-APP_DIR="/opt/pond-monitor"
+APP_DIR="/opt/pond-collector"
 CONFIG_FILE="$APP_DIR/config/pond.env"
 CONFIG_EXAMPLE="$APP_DIR/config/pond.env.example"
 

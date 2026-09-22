@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/opt/pond-monitor/tools/network-watchdog
+ExecStart=/opt/pond-collector/tools/network-watchdog
 Restart=on-failure
 RestartSec=10
 User=root
