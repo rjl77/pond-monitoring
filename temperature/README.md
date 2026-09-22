@@ -1,18 +1,19 @@
-# Pond Monitor
+# Pond Collector
 
-Pond Monitor is a Raspberry Pi-based environmental monitoring system for a
-backyard pond.
+Pond Collector is the temperature-monitoring component of the broader
+`pond-monitoring` project.
 
-At present, it collects water temperature from a DS18B20 1-Wire sensor and writes 
-readings to InfluxDB. Air temperature can optionally be obtained from Hubitat or a 
-local DHT22 sensor (DS18B20 sensors don't give accurate readings in sunlight).
+It runs on a Raspberry Pi and collects water temperature from a DS18B20 1-Wire
+sensor, writing readings to InfluxDB. Air temperature can optionally be obtained
+from Hubitat or a local DHT22 sensor (DS18B20 sensors don't give accurate
+readings in sunlight).
 
 A separate, optional Hubitat publisher reads the rolling 24-hour water
 temperature statistics from InfluxDB and publishes the current, high, low, and
 update time to Hubitat devices.
 
-Pond Monitor includes a `pond-monitor` administration command that provides a
-single interface for routine operation and maintenance. It reports application
+Pond Collector includes a `pond-collector` administration command that provides
+a single interface for routine operation and maintenance. It reports application
 and sensor status, displays logs, identifies the deployed Git version, reruns
 the installer, and safely pulls and deploys updates from Git.
 
@@ -50,31 +51,31 @@ the core application; Hubitat publishing is an optional integration.
 ## Project Layout
 
 ```text
-pond-monitor/
-├── config/
-│   ├── pond.env.example
-│   └── pond.env                 # local, Git-ignored
-├── docs/
-│   ├── INSTALL.md
-│   ├── OPERATIONS.md
-│   └── TROUBLESHOOTING.md
-├── runtime/
-│   └── sensor_journal.log       # created at runtime, Git-ignored
-├── src/
-│   ├── collector.py
-│   ├── hubitat.py
-│   └── pond/
-├── systemd/
-│   ├── pond-collector.service
-│   ├── pond-hubitat.service
-│   └── pond-network-watchdog.service
-├── tools/
-│   ├── network-watchdog
-│   └── pond-monitor
-├── .gitignore
-├── install.sh
-├── README.md
-└── requirements.txt
+temperature/
+|-- config/
+|   |-- pond.env.example
+|   `-- pond.env                 # local, Git-ignored
+|-- docs/
+|   |-- INSTALL.md
+|   |-- OPERATIONS.md
+|   `-- TROUBLESHOOTING.md
+|-- runtime/
+|   `-- sensor_journal.log       # created at runtime, Git-ignored
+|-- src/
+|   |-- collector.py
+|   |-- hubitat.py
+|   `-- pond/
+|-- systemd/
+|   |-- pond-collector.service
+|   |-- pond-hubitat.service
+|   `-- pond-network-watchdog.service
+|-- tools/
+|   |-- network-watchdog
+|   `-- pond-collector
+|-- .gitignore
+|-- install.sh
+|-- README.md
+`-- requirements.txt
 ```
 
 `config/pond.env` contains machine-local configuration and secrets and is not
@@ -121,18 +122,22 @@ A lightweight TCP health listener is provided on the configured health port
 
 See `docs/INSTALL.md` for initial deployment instructions.
 
-For a fresh installation, run:
+The deployed application is available at:
 
-```bash
-cd /opt/pond-monitor
-sudo ./install.sh
+```text
+/opt/pond-collector
 ```
 
-After installation, use the included administration command for normal maintenance:
+For reinstallation or configuration changes on an existing deployment, run:
 
 ```bash
-sudo pond-monitor install
-sudo pond-monitor refresh
+sudo pond-collector install
+```
+
+For normal deployment of updates from Git, run:
+
+```bash
+sudo pond-collector refresh
 ```
 
 Use `install` after local configuration changes. Use `refresh` to pull and
@@ -150,13 +155,13 @@ Hubitat, and systemd troubleshooting.
 
 ## Examples
 
-### Refresh via `pond-monitor refresh`
+### Refresh via `pond-collector refresh`
 
-![pond-monitor refresh example](pond-monitor-refresh-example.png)
+![pond-collector refresh example](pond-monitor-refresh-example.png)
 
-### Status check via `pond-monitor status`
+### Status check via `pond-collector status`
 
-![pond-monitor status example](pond-monitor-status-example.png)
+![pond-collector status example](pond-monitor-status-example.png)
 
 ### Grafana
 

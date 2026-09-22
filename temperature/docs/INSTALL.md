@@ -1,6 +1,6 @@
-# Pond Monitor Installation
+# Pond Collector Installation
 
-This document describes how to deploy Pond Monitor to a Raspberry Pi from a
+This document describes how to deploy Pond Collector to a Raspberry Pi from a
 fresh Raspberry Pi OS installation.
 
 ## Hardware
@@ -20,22 +20,22 @@ The DS18B20 must be physically connected before completing installation.
 The stable application path is:
 
 ```text
-/opt/pond-monitor
+/opt/pond-collector
 ```
 
 For a Git deployment, this is a symbolic link to the `temperature/` project in
 the production checkout:
 
 ```text
-/opt/pond-monitor -> /opt/pond-monitor-repo/temperature
+/opt/pond-collector -> /opt/pond-monitor-repo/temperature
 ```
 
-The application must be present at `/opt/pond-monitor` before running the
+The application must be present at `/opt/pond-collector` before running the
 installer.
 
 ## Enable 1-Wire
 
-Pond Monitor requires the Raspberry Pi 1-Wire interface for the DS18B20.
+Pond Collector requires the Raspberry Pi 1-Wire interface for the DS18B20.
 
 The boot configuration should contain:
 
@@ -73,7 +73,7 @@ exists and is readable. It does not modify the Raspberry Pi boot configuration.
 Machine-specific configuration is stored in:
 
 ```text
-/opt/pond-monitor/config/pond.env
+/opt/pond-collector/config/pond.env
 ```
 
 This file contains secrets and must not be committed to Git.
@@ -90,7 +90,7 @@ The installer then exits so the configuration can be edited.
 Edit:
 
 ```bash
-sudo nano /opt/pond-monitor/config/pond.env
+sudo nano /opt/pond-collector/config/pond.env
 ```
 
 At minimum, configure the runtime account, DS18B20 ID, InfluxDB connection,
@@ -177,10 +177,10 @@ Set the value to `false` to disable the publisher service.
 
 ## Installation
 
-Run:
+For the initial installation, run the installer directly:
 
 ```bash
-cd /opt/pond-monitor
+cd /opt/pond-collector
 sudo ./install.sh
 ```
 
@@ -194,7 +194,7 @@ The installer:
 6. Discovers DS18B20 sensors.
 7. Verifies the configured water sensor.
 8. Renders and installs the systemd service files.
-9. Installs the `pond-monitor` administration command.
+9. Installs the `pond-collector` administration command.
 10. Enables and restarts the collector.
 11. Enables/restarts or disables the Hubitat publisher according to config.
 12. Enables and restarts the network diagnostic watchdog.
@@ -206,13 +206,13 @@ changes. After the initial installation, the preferred interface for rerunning
 it is:
 
 ```bash
-sudo pond-monitor install
+sudo pond-collector install
 ```
 
 Normal Git updates should instead be performed with:
 
 ```bash
-sudo pond-monitor refresh
+sudo pond-collector refresh
 ```
 
 ## Installed Services
@@ -228,7 +228,7 @@ The installer creates:
 The source templates remain under:
 
 ```text
-/opt/pond-monitor/systemd/
+/opt/pond-collector/systemd/
 ```
 
 The collector and Hubitat templates contain `@SERVICE_USER@` and
@@ -259,18 +259,18 @@ reboot the Raspberry Pi.
 The installer creates:
 
 ```text
-/usr/local/bin/pond-monitor -> /opt/pond-monitor/tools/pond-monitor
+/usr/local/bin/pond-collector -> /opt/pond-collector/tools/pond-collector
 ```
 
 The command provides the normal administration interface after installation:
 
 ```bash
-pond-monitor status
-pond-monitor version
-pond-monitor logs
-pond-monitor logs -f
-sudo pond-monitor install
-sudo pond-monitor refresh
+pond-collector status
+pond-collector version
+pond-collector logs
+pond-collector logs -f
+sudo pond-collector install
+sudo pond-collector refresh
 ```
 
 The command source is maintained in the Git repository as an executable file.
@@ -282,7 +282,7 @@ updates to update the command without maintaining a separate copy.
 Perform the normal overall check:
 
 ```bash
-pond-monitor status
+pond-collector status
 ```
 
 This reports service state, Git deployment state, the collector TCP health
@@ -291,7 +291,7 @@ listener, and current and rolling 24-hour InfluxDB temperature data.
 Verify the installed version:
 
 ```bash
-pond-monitor version
+pond-collector version
 ```
 
 For direct systemd verification:
@@ -319,7 +319,7 @@ systemctl is-enabled pond-network-watchdog.service
 Recent logs can be viewed with:
 
 ```bash
-pond-monitor logs
+pond-collector logs
 ```
 
 or directly through the journal:
@@ -341,7 +341,7 @@ sudo reboot
 After reconnecting, verify:
 
 ```bash
-pond-monitor status
+pond-collector status
 ```
 
 Confirm that the collector and network watchdog are active, the optional 
@@ -369,7 +369,7 @@ Before initializing or publishing the Git repository:
 - Rotate any secrets (Hubitat Maker API token, InfluxDB credentials) if 
 previously-exposed, weak or not unique.
 - Identify and update any other systems that share those credentials.
-- Update only the machine-local `config/pond.env` with the new Pond Monitor
+- Update only the machine-local `config/pond.env` with the new Pond Collector
   credentials.
 - Verify that no real credential value occurs elsewhere in the project tree.
 - Verify that the actual `config/pond.env` is ignored by Git.
