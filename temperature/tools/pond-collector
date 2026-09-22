@@ -4,7 +4,7 @@ set -u
 
 PROGRAM_NAME="pond-collector"
 APP_DIR="/opt/pond-collector"
-REPO_DIR="/opt/pond-monitor-repo"
+REPO_DIR="/opt/pond-monitoring"
 
 usage() {
     cat <<EOF
