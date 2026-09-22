@@ -314,18 +314,21 @@ log "systemd service files installed."
 # Install administration command
 # ----------------------------------------------------------------------
 
-POND_MONITOR_TOOL="$APP_DIR/tools/pond-monitor"
-POND_MONITOR_COMMAND="/usr/local/bin/pond-monitor"
+POND_COLLECTOR_TOOL="$APP_DIR/tools/pond-collector"
+POND_COLLECTOR_COMMAND="/usr/local/bin/pond-collector"
+POND_MONITOR_COMPAT_COMMAND="/usr/local/bin/pond-monitor"
 
-if [[ ! -f "$POND_MONITOR_TOOL" ]]; then
-    die "Pond Monitor administration tool not found: $POND_MONITOR_TOOL"
+if [[ ! -f "$POND_COLLECTOR_TOOL" ]]; then
+    die "Pond Collector administration tool not found: $POND_COLLECTOR_TOOL"
 fi
 
-chmod 755 "$POND_MONITOR_TOOL"
+chmod 755 "$POND_COLLECTOR_TOOL"
 
-ln -sfn "$POND_MONITOR_TOOL" "$POND_MONITOR_COMMAND"
+ln -sfn "$POND_COLLECTOR_TOOL" "$POND_COLLECTOR_COMMAND"
+ln -sfn "$POND_COLLECTOR_COMMAND" "$POND_MONITOR_COMPAT_COMMAND"
 
-log "Administration command installed: $POND_MONITOR_COMMAND"
+log "Administration command installed: $POND_COLLECTOR_COMMAND"
+log "Compatibility command installed: $POND_MONITOR_COMPAT_COMMAND"
 
 # ----------------------------------------------------------------------
 # Enable and start services
