@@ -96,12 +96,16 @@ def cycle_worker(result_q):
 
     try:
         sensor_id = require("WATER_SENSOR_ID")
+        log.info("Cycle stage: reading water temperature")
         water_temp = read_water_temperature(sensor_id)
+        log.info("Cycle stage complete: water temperature")
     except Exception as exc:
         log.error("Water temperature read failed: %s", exc)
 
     try:
+        log.info("Cycle stage: reading air temperature")
         air_temp = read_air_temperature()
+        log.info("Cycle stage complete: air temperature")
     except Exception as exc:
         log.error("Air temperature read failed: %s", exc)
 
@@ -129,7 +133,9 @@ def cycle_worker(result_q):
     client = None
 
     try:
+        log.info("Cycle stage: connecting to InfluxDB")
         client = connect(retries=2, delay=2)
+        log.info("Cycle stage complete: connected to InfluxDB")
     except Exception as exc:
         log.error(
             "InfluxDB unavailable: %s. Journaling points.",
@@ -141,7 +147,9 @@ def cycle_worker(result_q):
 
     try:
         try:
+            log.info("Cycle stage: flushing offline journal")
             journal_flush(client)
+            log.info("Cycle stage complete: offline journal flush")
         except Exception as exc:
             log.error(
                 "Unable to flush offline journal (non-fatal): %s",
@@ -149,7 +157,9 @@ def cycle_worker(result_q):
             )
 
         try:
+            log.info("Cycle stage: writing current points")
             result = client.write_points(points)
+            log.info("Cycle stage complete: current points write")
 
             if not result:
                 raise RuntimeError(
