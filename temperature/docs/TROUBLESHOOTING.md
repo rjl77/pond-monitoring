@@ -1,20 +1,25 @@
-# Pond Monitor Troubleshooting
+# Pond Collector Troubleshooting
 
-This document covers common Pond Monitor failure modes and diagnostic steps.
+This document covers common Pond Collector failure modes and diagnostic steps.
 
 ## Start With Service Status
 
-Check both services:
+Check all three services:
 
 ```bash
-systemctl status pond-collector.service pond-hubitat.service
+systemctl status pond-collector.service pond-hubitat.service pond-network-watchdog.service
 ```
 
-Check recent logs:
+For a combined chronological view of the service logs:
 
 ```bash
-journalctl -u pond-collector.service -n 50 --no-pager
-journalctl -u pond-hubitat.service -n 50 --no-pager
+pond-collector diag
+```
+
+To inspect a specific time window:
+
+```bash
+pond-collector diag --since "2026-09-23 19:00" --until "2026-09-23 21:40"
 ```
 
 For problems following a reboot, restrict the logs to the current boot:
@@ -22,6 +27,7 @@ For problems following a reboot, restrict the logs to the current boot:
 ```bash
 journalctl -b -u pond-collector.service
 journalctl -b -u pond-hubitat.service
+journalctl -b -u pond-network-watchdog.service
 ```
 
 ## Collector Will Not Start
@@ -29,8 +35,7 @@ journalctl -b -u pond-hubitat.service
 Run the installer first:
 
 ```bash
-cd /opt/pond-monitor
-sudo ./install.sh
+sudo pond-collector install
 ```
 
 The installer validates the configuration, runtime account, 1-Wire setup,
@@ -85,7 +90,7 @@ sensor wiring and connections.
 Compare the configured ID:
 
 ```bash
-grep '^WATER_SENSOR_ID=' /opt/pond-monitor/config/pond.env
+grep '^WATER_SENSOR_ID=' /opt/pond-collector/config/pond.env
 ```
 
 with detected sensors:
@@ -97,8 +102,7 @@ ls -1 /sys/bus/w1/devices/28-*
 If the probe was replaced, update `WATER_SENSOR_ID` and rerun:
 
 ```bash
-cd /opt/pond-monitor
-sudo ./install.sh
+sudo pond-collector install
 ```
 
 ## Test the DS18B20 Directly
@@ -126,25 +130,49 @@ The collector is designed to tolerate temporary InfluxDB or network outages.
 When a reading cannot be written to InfluxDB, it is stored in:
 
 ```text
-/opt/pond-monitor/runtime/sensor_journal.log
+/opt/pond-collector/runtime/sensor_journal.log
 ```
 
 Check whether a journal exists:
 
 ```bash
-ls -lh /opt/pond-monitor/runtime/sensor_journal.log
+ls -lh /opt/pond-collector/runtime/sensor_journal.log
 ```
 
 Inspect recent entries without modifying it:
 
 ```bash
-tail -20 /opt/pond-monitor/runtime/sensor_journal.log
+tail -20 /opt/pond-collector/runtime/sensor_journal.log
 ```
 
 When InfluxDB becomes reachable again, the collector attempts to flush queued
 records before writing the current reading.
 
 Do not delete the journal merely because InfluxDB is temporarily unavailable.
+
+## Network Problems and Watchdog Diagnostics
+
+The network watchdog monitors LAN connectivity independently of the collector.
+It records diagnostic information after repeated connectivity failures and logs
+when connectivity recovers.
+
+Check its status and recent logs:
+
+```bash
+systemctl status pond-network-watchdog.service
+journalctl -u pond-network-watchdog.service -n 100 --no-pager
+```
+
+For an incident affecting multiple Pond Collector services, prefer the combined
+chronological view:
+
+```bash
+pond-collector diag --since "1 hour ago"
+```
+
+The watchdog is currently diagnostic only. It does not automatically reconnect
+the network interface or reboot the Raspberry Pi. Use its logs to determine the
+failure mode before taking recovery action.
 
 ## Journal Does Not Flush
 
@@ -194,7 +222,7 @@ The collector treats failure to bind its health port as a startup failure.
 Check the configured source:
 
 ```bash
-grep '^AIR_SOURCE=' /opt/pond-monitor/config/pond.env
+grep '^AIR_SOURCE=' /opt/pond-collector/config/pond.env
 ```
 
 Supported values are:
@@ -226,7 +254,7 @@ python3 -c 'import board, adafruit_dht; print("DHT dependencies OK")'
 ```
 
 If this fails, the optional Blinka/DHT Python dependencies are not available
-to the Python environment used by Pond Monitor.
+to the Python environment used by Pond Collector.
 
 DHT dependencies are intentionally not installed automatically by
 `install.sh`.
@@ -246,7 +274,7 @@ missing air-temperature readings are expected.
 Check whether publishing is enabled:
 
 ```bash
-grep '^HUBITAT_PUBLISH_ENABLED=' /opt/pond-monitor/config/pond.env
+grep '^HUBITAT_PUBLISH_ENABLED=' /opt/pond-collector/config/pond.env
 ```
 
 If enabled, check the service:
@@ -281,7 +309,7 @@ Check the underlying InfluxDB water-temperature data for the previous
 Run:
 
 ```bash
-sudo /opt/pond-monitor/install.sh
+sudo pond-collector install
 ```
 
 The installer validates required configuration fields and numeric values before
@@ -290,7 +318,7 @@ reinstalling the services.
 The local configuration file is:
 
 ```text
-/opt/pond-monitor/config/pond.env
+/opt/pond-collector/config/pond.env
 ```
 
 Do not replace it with `pond.env.example` unless intentionally rebuilding the
@@ -305,6 +333,18 @@ systemctl status pond-collector.service
 journalctl -u pond-collector.service -n 100 --no-pager
 ```
 
+For a collector timeout or restart loop, use the combined diagnostic view for
+the affected time window:
+
+```bash
+pond-collector diag --since "2026-09-23 19:00" --until "2026-09-23 21:40"
+```
+
+The collector logs diagnostic `Cycle stage:` messages around operations that
+can block. If a cycle reaches a stage but does not log its corresponding
+completion message before the hard timeout, that identifies the operation that
+was still in progress when the cycle was terminated.
+
 The collector uses `Restart=on-failure`.
 
 Repeated child-process failures can intentionally cause the collector process
@@ -318,12 +358,11 @@ rather than disabling the restart behavior.
 Check Python syntax where appropriate, then deploy through:
 
 ```bash
-cd /opt/pond-monitor
-sudo ./install.sh
+sudo pond-collector refresh
 ```
 
-This is preferable to manually copying or editing the installed systemd unit
-files.
+This updates the production checkout, runs the installer, restarts the services,
+and verifies the deployment.
 
 ## Raspberry Pi Becomes Very Slow or SSH Stops Responding
 
@@ -350,6 +389,7 @@ If a reboot was required, verify:
 ```bash
 systemctl is-active pond-collector.service
 systemctl is-active pond-hubitat.service
+systemctl is-active pond-network-watchdog.service
 ```
 
 Then inspect current-boot logs:
@@ -357,6 +397,7 @@ Then inspect current-boot logs:
 ```bash
 journalctl -b -u pond-collector.service -n 50 --no-pager
 journalctl -b -u pond-hubitat.service -n 50 --no-pager
+journalctl -b -u pond-network-watchdog.service -n 50 --no-pager
 ```
 
 The collector's local journal provides protection for readings that could not
