@@ -1,14 +1,18 @@
-# Pond Monitor Development Notes
+# Pond Collector Development Notes
 
 ## Architecture
 
-Pond Monitor has two intentionally separate processes:
+Pond Collector has three intentionally separate services:
 
 - `src/collector.py` is the core sensor collector.
 - `src/hubitat.py` is an optional Hubitat publisher.
+- `tools/network-watchdog` independently monitors network connectivity and
+  records diagnostic information during outages.
 
-Do not combine these processes. Hubitat publishing must remain optional and
-must not be required for core sensor collection.
+Do not combine these services. Hubitat publishing must remain optional and
+must not be required for core sensor collection. The network watchdog must
+remain independent of the collector so that it can record network conditions
+when the collector itself is unhealthy.
 
 Air-temperature input and Hubitat publishing are separate concerns.
 `AIR_SOURCE` may be `hubitat`, `dht`, or `none` regardless of whether Hubitat
@@ -61,6 +65,10 @@ Preserve these collector behaviors:
 - independent water and air acquisition
 - TCP health listener
 - failure to bind the health port is fatal at startup
+- independent network watchdog diagnostics
+- watchdog observation must remain independent of collector health
+- no automatic network reconnect or Raspberry Pi reboot unless recovery
+  behavior is intentionally added and documented
 
 Temporary InfluxDB or network failure must not cause sensor readings to be
 silently discarded.
@@ -83,13 +91,17 @@ installations using Hubitat or no air-temperature source.
 
 ## Deployment
 
-The supported deployment entry point is:
+The supported administrative entry points are:
 
 ```bash
-sudo ./install.sh
+sudo pond-collector install
+sudo pond-collector refresh
 ```
 
-Keep the installer idempotent.
+Use `install` to install or reconfigure the deployed system. Use `refresh` to
+update the production checkout from Git and redeploy the committed version.
+
+The underlying `install.sh` script must remain idempotent.
 
 Systemd source files under `systemd/` are templates. Runtime user/group values
 are substituted by `install.sh`.
