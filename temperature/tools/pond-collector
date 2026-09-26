@@ -15,6 +15,7 @@ Commands:
   install   Run the Pond Collector installer
   refresh   Pull the latest version from Git and install it
   logs      Show recent Pond Collector logs
+  diag      Show Pond Collector service logs for a diagnostic time window.
   version   Show the installed Git version
   help      Show this help
 EOF
@@ -249,6 +250,67 @@ EOF
     esac
 }
 
+show_diag() {
+    local since="1 hour ago"
+    local until="now"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --since)
+                if [[ $# -lt 2 ]]; then
+                    echo "Missing value for --since" >&2
+                    return 1
+                fi
+                since="$2"
+                shift 2
+                ;;
+            --until)
+                if [[ $# -lt 2 ]]; then
+                    echo "Missing value for --until" >&2
+                    return 1
+                fi
+                until="$2"
+                shift 2
+                ;;
+            -h|--help)
+                cat <<EOF
+Usage: $PROGRAM_NAME diag [--since TIME] [--until TIME]
+
+Show collector and watchdog logs for a diagnostic time window.
+
+Defaults:
+  --since "1 hour ago"
+  --until "now"
+
+Examples:
+  $PROGRAM_NAME diag
+  $PROGRAM_NAME diag --since "2026-09-23 19:00"
+  $PROGRAM_NAME diag --since "2026-09-23 19:00" --until "2026-09-23 21:40"
+EOF
+                return 0
+                ;;
+            *)
+                echo "Unknown diag option: $1" >&2
+                echo "Usage: $PROGRAM_NAME diag [--since TIME] [--until TIME]" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    echo "Pond Collector Diagnostics"
+    echo "=========================="
+    echo "Window: $since -> $until"
+    echo
+
+    journalctl \
+        -u pond-collector.service \
+        -u pond-hubitat.service \
+        -u pond-network-watchdog.service \
+        --since "$since" \
+        --until "$until" \
+        --no-pager
+}
+
 case "${1:-help}" in
     status)
         show_status
@@ -262,6 +324,10 @@ case "${1:-help}" in
     logs)
         shift
         show_logs "$@"
+        ;;
+    diag)
+        shift
+        show_diag "$@"
         ;;
     version)
         show_version
