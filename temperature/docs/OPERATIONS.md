@@ -1,15 +1,16 @@
-# Pond Monitor Operations
+# Pond Collector Operations
 
-This document covers normal operation and maintenance of Pond Monitor after
+This document covers normal operation and maintenance of Pond Collector after
 installation.
 
 ## Services
 
-Pond Monitor normally consists of two systemd services:
+Pond Collector normally consists of three systemd services:
 
 ```text
 pond-collector.service
 pond-hubitat.service
+pond-network-watchdog.service
 ```
 
 The collector is the core service.
@@ -17,25 +18,29 @@ The collector is the core service.
 The Hubitat publisher is optional and is controlled by
 `HUBITAT_PUBLISH_ENABLED` in `config/pond.env`.
 
+The network watchdog monitors LAN connectivity and records diagnostic
+information after repeated connectivity failures. It is diagnostic only and
+does not currently reconnect the network or reboot the system.
+
 ## Administration Command
 
-Normal Pond Monitor administration is performed via:
+Normal Pond Collector administration is performed via:
 
-`pond-monitor`
+`pond-collector`
 
 This command is installed as:
 
-`/usr/local/bin/pond-monitor -> /opt/pond-monitor/tools/pond-monitor`
+`/usr/local/bin/pond-collector -> /opt/pond-collector/tools/pond-collector`
 
 The available commands are:
 
 ```bash
-pond-monitor status
-pond-monitor version
-pond-monitor logs
-pond-monitor logs -f
-sudo pond-monitor install
-sudo pond-monitor refresh
+pond-collector status
+pond-collector version
+pond-collector logs
+pond-collector logs -f
+sudo pond-collector install
+sudo pond-collector refresh
 ```
 
 The following sections document the underlying systemd, journalctl, and Git
@@ -46,7 +51,7 @@ commands for troubleshooting and recovery.
 For the normal overall status check:
 
 ```bash
-pond-monitor status
+pond-collector status
 ```
 
 This reports service state, the deployed Git version and working-tree state,
@@ -55,10 +60,10 @@ temperature data.
 
 For detailed systemd status:
 
-Check both services:
+Check the services directly:
 
 ```bash
-systemctl status pond-collector.service pond-hubitat.service
+systemctl status pond-collector.service pond-hubitat.service pond-network-watchdog.service
 ```
 
 For a concise check:
@@ -66,6 +71,7 @@ For a concise check:
 ```bash
 systemctl is-active pond-collector.service
 systemctl is-active pond-hubitat.service
+systemctl is-active pond-network-watchdog.service
 ```
 
 Check whether they start automatically at boot:
@@ -73,6 +79,7 @@ Check whether they start automatically at boot:
 ```bash
 systemctl is-enabled pond-collector.service
 systemctl is-enabled pond-hubitat.service
+systemctl is-enabled pond-network-watchdog.service
 ```
 
 ## Restart Services
@@ -89,12 +96,17 @@ Restart the Hubitat publisher:
 sudo systemctl restart pond-hubitat.service
 ```
 
-After application or configuration changes, the preferred method is to rerun
-the installer:
+Restart the network watchdog:
 
 ```bash
-cd /opt/pond-monitor
-sudo ./install.sh
+sudo systemctl restart pond-network-watchdog.service
+```
+
+After application or configuration changes, the preferred method is to rerun
+the installer through the administration command:
+
+```bash
+sudo pond-collector install
 ```
 
 This revalidates configuration and hardware, reinstalls the systemd units, and
@@ -102,26 +114,39 @@ verifies the services.
 
 ## Logs
 
-Show the most recent logs from both services:
+Show the most recent logs from all services:
 
 ```bash
-pond-monitor logs
+pond-collector logs
 ```
 
-Follow both services live:
+Follow all services live:
 
 ```bash
-pond-monitor logs -f
+pond-collector logs -f
 ```
 
 Limit output to one service:
 
 ```bash
-pond-monitor logs collector
-pond-monitor logs hubitat
+pond-collector logs collector
+pond-collector logs hubitat
+pond-collector logs watchdog
 ```
 
-Add `-f` to either command to follow that service live.
+Add `-f` to any of these commands to follow that service live.
+
+For troubleshooting a specific time window, use:
+
+```bash
+pond-collector diag
+pond-collector diag --since "2026-09-23 19:00"
+pond-collector diag --since "2026-09-23 19:00" --until "2026-09-23 21:40"
+```
+
+`diag` combines the Pond Collector service logs into a single chronological
+view. By default, it shows the previous hour. Use `--since` and `--until` to
+inspect a specific time window.
 
 The underlying journal can also be queried directly:
 
@@ -205,7 +230,7 @@ in the runtime journal rather than immediately discarded.
 The journal is:
 
 ```text
-/opt/pond-monitor/runtime/sensor_journal.log
+/opt/pond-collector/runtime/sensor_journal.log
 ```
 
 It uses newline-delimited JSON.
@@ -269,7 +294,7 @@ HUBITAT_PUBLISH_ENABLED
 in `config/pond.env`, then rerun:
 
 ```bash
-sudo ./install.sh
+sudo pond-collector install
 ```
 
 ## Configuration Changes
@@ -277,13 +302,13 @@ sudo ./install.sh
 Local configuration is stored in:
 
 ```text
-/opt/pond-monitor/config/pond.env
+/opt/pond-collector/config/pond.env
 ```
 
 After changing configuration, run:
 
 ```bash
-sudo pond-monitor install
+sudo pond-collector install
 ```
 
 This validates the new configuration before completing deployment.
@@ -291,7 +316,7 @@ This validates the new configuration before completing deployment.
 The equivalent direct installer command is:
 
 ```bash
-cd /opt/pond-monitor
+cd /opt/pond-collector
 sudo ./install.sh
 ```
 
@@ -321,11 +346,11 @@ YES
 on the CRC/status line and a `t=` temperature value on the data line.
 
 If the physical probe is replaced, update `WATER_SENSOR_ID` in `pond.env` and
-rerun `install.sh`.
+rerun `sudo pond-collector install`.
 
 ## Reboot
 
-Pond Monitor is intended to recover automatically after a normal reboot.
+Pond Collector is intended to recover automatically after a normal reboot.
 
 Reboot:
 
@@ -336,7 +361,7 @@ sudo reboot
 After reconnecting:
 
 ```bash
-pond-monitor status
+pond-collector status
 ```
 
 For a direct systemd check:
@@ -344,15 +369,8 @@ For a direct systemd check:
 ```bash
 systemctl is-active pond-collector.service
 systemctl is-active pond-hubitat.service
+systemctl is-active pond-network-watchdog.service
 ```
-
-Then check recent collector output:
-
-```bash
-journalctl -b -u pond-collector.service -n 30 --no-pager
-```
-
-Then check recent collector output:
 
 ```bash
 journalctl -b -u pond-collector.service -n 30 --no-pager
@@ -363,7 +381,7 @@ journalctl -b -u pond-collector.service -n 30 --no-pager
 For a normal application update from Git:
 
 ```bash
-sudo pond-monitor refresh
+sudo pond-collector refresh
 ```
 
 See **Git Deployment and Updates** below for details and the manual recovery
@@ -388,7 +406,7 @@ Raspberry Pi.
 
 ## Backup and Recovery
 
-Pond Monitor is designed so that the Raspberry Pi can be rebuilt rather than
+Pond Collector is designed so that the Raspberry Pi can be rebuilt rather than
 requiring restoration of a complete system image.
 
 ### What Is Stored Where
@@ -396,13 +414,13 @@ requiring restoration of a complete system image.
 Historical sensor measurements are stored in InfluxDB and are not dependent on
 the Raspberry Pi SD card after they have been successfully written.
 
-The application source and documentation should be recoverable from the Git
-repository once the project is placed under version control.
+The application source and documentation are recoverable from the `pond-monitoring`
+Git repository.
 
 Machine-local configuration is stored in:
 
 ```text
-/opt/pond-monitor/config/pond.env
+/opt/pond-collector/config/pond.env
 ```
 
 This file contains secrets and is intentionally excluded from Git.
@@ -410,7 +428,7 @@ This file contains secrets and is intentionally excluded from Git.
 Readings waiting for delivery to InfluxDB may exist in:
 
 ```text
-/opt/pond-monitor/runtime/sensor_journal.log
+/opt/pond-collector/runtime/sensor_journal.log
 ```
 
 The journal is also excluded from Git.
@@ -448,16 +466,19 @@ historical pond measurements.
 For a replacement or freshly imaged Pi:
 
 1. Install Raspberry Pi OS and configure networking.
-2. Install or copy the Pond Monitor project to `/opt/pond-monitor`.
-3. Enable the Raspberry Pi 1-Wire interface.
-4. Reboot if required by the 1-Wire configuration change.
-5. Connect the DS18B20 sensor.
-6. Discover its `28-*` device ID.
-7. Create or restore `config/pond.env`.
-8. Set `WATER_SENSOR_ID` to the installed probe.
-9. Run `sudo ./install.sh`.
-10. Verify both service state and new InfluxDB readings.
-11. Restore a preserved runtime journal if recovery of queued readings is
+2. Clone the `pond-monitoring` repository to `/opt/pond-monitoring` using the
+   sparse-checkout procedure described below.
+3. Create `/opt/pond-collector` as a symbolic link to
+   `/opt/pond-monitoring/temperature`.
+4. Enable the Raspberry Pi 1-Wire interface.
+5. Reboot if required by the 1-Wire configuration change.
+6. Connect the DS18B20 sensor.
+7. Discover its `28-*` device ID.
+8. Create or restore `config/pond.env`.
+9. Set `WATER_SENSOR_ID` to the installed probe.
+10. Run `/opt/pond-collector/install.sh` as root for the initial installation.
+11. Verify the three service states, TCP health check, and new InfluxDB readings.
+12. Restore a preserved runtime journal if recovery of queued readings is
     required.
 
 A full SD-card image can be maintained as an additional disaster-recovery
@@ -472,20 +493,20 @@ The production installation is maintained as a sparse checkout of the
 Repository location:
 
 ```text
-/opt/pond-monitor-repo
+/opt/pond-monitoring
 ```
 
 Only the `temperature/` project is checked out. The stable application path is
 a symbolic link:
 
 ```text
-/opt/pond-monitor -> /opt/pond-monitor-repo/temperature
+/opt/pond-collector -> /opt/pond-monitoring/temperature
 ```
 
 Machine-specific configuration remains in:
 
 ```text
-/opt/pond-monitor/config/pond.env
+/opt/pond-collector/config/pond.env
 ```
 
 `pond.env` is excluded from Git and must never be committed.
@@ -495,7 +516,7 @@ Machine-specific configuration remains in:
 The normal production update is:
 
 ```bash
-sudo pond-monitor refresh
+sudo pond-collector refresh
 ```
 
 The refresh command:
@@ -503,7 +524,7 @@ The refresh command:
 - requires root privileges;
 - requires a clean Git working tree;
 - updates the production repository with `git pull --ff-only`;
-- runs the Pond Monitor installer;
+- runs the Pond Collector installer;
 - verifies the deployed services and health check; and
 - reports the deployed Git version.
 
@@ -513,8 +534,8 @@ this check without first determining why the repository contains local changes.
 After an update, verify the installation with:
 
 ```bash
-pond-monitor status
-pond-monitor version
+pond-collector status
+pond-collector version
 ```
 
 The repository should report a clean working tree.
@@ -525,25 +546,27 @@ If the administration command itself is unavailable or an update must be
 performed manually:
 
 ```bash
-cd /opt/pond-monitor-repo
+cd /opt/pond-monitoring
 git pull --ff-only
 
-cd /opt/pond-monitor
+cd /opt/pond-collector
 sudo ./install.sh
 ```
 
 Then verify:
 
 ```bash
-pond-monitor status
+pond-collector status
 ```
 
-If `pond-monitor` is unavailable, use the underlying service checks:
+If `pond-collector` is unavailable, use the underlying service checks:
 
 ```bash
-systemctl is-active pond-collector.service pond-hubitat.service
+systemctl is-active pond-collector.service
+systemctl is-active pond-hubitat.service
+systemctl is-active pond-network-watchdog.service
 ```
 
 Ideally, do not develop directly on the Raspberry Pi. Make source and 
 documentation changes in the Git repository on a development machine, 
-push them to GitHub, then use `sudo pond-monitor refresh` on the Pi.
+push them to GitHub, then use `sudo pond-collector refresh` on the Pi.
