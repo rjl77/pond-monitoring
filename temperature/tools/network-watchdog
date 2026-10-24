@@ -75,12 +75,20 @@ recover_network() {
     nmcli device disconnect "$INTERFACE" || true
     sleep 5
 
-    if nmcli connection up "$connection"; then
-        log "NetworkManager recovery command completed."
+    if ! nmcli connection up "$connection"; then
+        log "NetworkManager recovery command failed."
+        return 1
+    fi
+
+    log "NetworkManager connection activated; waiting for network to settle."
+    sleep 10
+
+    if validate_dependencies; then
+        log "Network recovery successful; required network dependencies are reachable."
         return 0
     fi
 
-    log "NetworkManager recovery command failed."
+    log "Network recovery incomplete; one or more required network dependencies remain unreachable."
     return 1
 }
 
@@ -98,6 +106,35 @@ network_reachable() {
     fi
 
     return 1
+}
+
+validate_dependencies() {
+    local failed=0
+
+    if ping -c 1 -W 2 "$GATEWAY" >/dev/null 2>&1; then
+        log "Recovery validation: gateway reachable."
+    else
+        log "Recovery validation: gateway unreachable."
+        failed=1
+    fi
+
+    if timeout 3 bash -c "</dev/tcp/${INFLUX_HOST}/${INFLUX_PORT}" 2>/dev/null; then
+        log "Recovery validation: InfluxDB TCP/${INFLUX_PORT} reachable."
+    else
+        log "Recovery validation: InfluxDB TCP/${INFLUX_PORT} unreachable."
+        failed=1
+    fi
+
+    if [[ "${AIR_SOURCE:-none}" == "hubitat" ]]; then
+        if timeout 3 bash -c "</dev/tcp/${HUBITAT_HOST}/80" 2>/dev/null; then
+            log "Recovery validation: Hubitat TCP/80 reachable."
+        else
+            log "Recovery validation: Hubitat TCP/80 unreachable."
+            failed=1
+        fi
+    fi
+
+    return "$failed"
 }
 
 snapshot() {
