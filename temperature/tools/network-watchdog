@@ -38,7 +38,11 @@ consecutive_failures=0
 outage_start=""
 
 log() {
-    logger -t pond-network-watchdog "$*"
+    logger -t pond-network-watchdog -- "$*"
+}
+
+get_active_connection() {
+    nmcli -g GENERAL.CONNECTION device show "$INTERFACE" 2>/dev/null
 }
 
 network_reachable() {
@@ -94,7 +98,8 @@ snapshot() {
     log "===== End network diagnostic snapshot ====="
 }
 
-log "Network watchdog started; interface=$INTERFACE gateway=$GATEWAY"
+CONNECTION=$(get_active_connection)
+log "Network watchdog started; interface=$INTERFACE connection=$CONNECTION gateway=$GATEWAY"
 
 while true; do
     if network_reachable; then
