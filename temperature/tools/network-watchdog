@@ -32,6 +32,7 @@ if [[ -z "$INTERFACE" ]]; then
 fi
 
 FAILURE_THRESHOLD=2
+RECOVERY_THRESHOLD=3
 CHECK_INTERVAL=60
 
 consecutive_failures=0
@@ -43,6 +44,44 @@ log() {
 
 get_active_connection() {
     nmcli -g GENERAL.CONNECTION device show "$INTERFACE" 2>/dev/null
+}
+
+get_recovery_connection() {
+    local connection
+
+    connection=$(get_active_connection)
+
+    if [[ -n "$connection" && "$connection" != "--" ]]; then
+        printf '%s\n' "$connection"
+        return 0
+    fi
+
+    nmcli -t -f NAME,TYPE connection show |
+        awk -F: '$2=="802-11-wireless" {print $1; exit}'
+}
+
+recover_network() {
+    local connection
+
+    connection=$(get_recovery_connection)
+
+    if [[ -z "$connection" ]]; then
+        log "Network recovery aborted: unable to determine a Wi-Fi connection."
+        return 1
+    fi
+
+    log "Attempting network recovery; interface=$INTERFACE connection=$connection"
+
+    nmcli device disconnect "$INTERFACE" || true
+    sleep 5
+
+    if nmcli connection up "$connection"; then
+        log "NetworkManager recovery command completed."
+        return 0
+    fi
+
+    log "NetworkManager recovery command failed."
+    return 1
 }
 
 network_reachable() {
@@ -123,6 +162,11 @@ while true; do
         if (( consecutive_failures == FAILURE_THRESHOLD )); then
             log "LAN connectivity failed ${FAILURE_THRESHOLD} consecutive checks."
             snapshot
+        fi
+
+        if (( consecutive_failures == RECOVERY_THRESHOLD )); then
+            log "LAN connectivity failed ${RECOVERY_THRESHOLD} consecutive checks; starting recovery."
+            recover_network
         fi
     fi
 
